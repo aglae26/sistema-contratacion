@@ -1,21 +1,23 @@
 version: '3.8'
 
 services:
-  # Servicio 1: Base de datos relacional (PostgreSQL)
-  db:
-    image: postgres:15-alpine
-    container_name: contratacion_db
+  # 1. El motor de la Base de Datos (PostgreSQL)
+  contratacion_db:
+    image: postgres:15
+    container_name: contratacion_postgres
     restart: always
     environment:
-      POSTGRES_USER: admin_user
-      POSTGRES_PASSWORD: super_secret_password_123
-      POSTGRES_DB: contratacion_sistema
+      - POSTGRES_USER=user_contratacion
+      - POSTGRES_PASSWORD=pass_contratacion
+      - POSTGRES_DB=db_contratacion
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - contratacion_network
 
-  # Servicio 2: Servidor Backend (FastAPI)
+  # 2. El Backend en Python (FastAPI + SQLAlchemy + Gemini)
   backend:
     build: ./backend
     container_name: contratacion_backend
@@ -23,23 +25,35 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://admin_user:super_secret_password_123@db:5432/contratacion_sistema
-      # RECUERDA: Reemplaza las equis (XXXXX) con tu API Key real de Google Cloud / Gemini
-      - GEMINI_API_KEY=AIzaSyXXXXX_TU_LLAVE_REAL_DE_GEMINI
+      - DATABASE_URL=postgresql://user_contratacion:pass_contratacion@contratacion_db:5432/db_contratacion
+      - GEMINI_API_KEY=${GEMINI_API_KEY} # <-- Lee de forma ultra segura tu archivo .env local
+    volumes:
+      - ./backend:/app
     depends_on:
-      - db
+      - contratacion_db
+    networks:
+      - contratacion_network
 
-  # Servicio 3: Interfaz de Usuario (React)
+  # 3. El Frontend en JavaScript (React)
   frontend:
     build: ./frontend
     container_name: contratacion_frontend
     restart: always
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
+    networks:
+      - contratacion_network
 
-# Explicación de Profesor: Los volúmenes permiten que los datos de tus contratos 
-# y empresas se guarden en tu disco real y no se borren al apagar el contenedor.
+# Definición de Recursos Compartidos (Redes y Volúmenes)
+networks:
+  contratacion_network:
+    driver: bridge
+
 volumes:
   postgres_data:
+    driver: local
