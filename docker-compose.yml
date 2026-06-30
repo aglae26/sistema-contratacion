@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Servicio 1: Base de datos relacional (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: contratacion_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: super_secret_password_123
+      POSTGRES_DB: contratacion_sistema
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Servicio 2: Servidor Backend (FastAPI)
+  backend:
+    build: ./backend
+    container_name: contratacion_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin_user:super_secret_password_123@db:5432/contratacion_sistema
+      # RECUERDA: Reemplaza las equis (XXXXX) con tu API Key real de Google Cloud / Gemini
+      - GEMINI_API_KEY=AIzaSyXXXXX_TU_LLAVE_REAL_DE_GEMINI
+    depends_on:
+      - db
+
+  # Servicio 3: Interfaz de Usuario (React)
+  frontend:
+    build: ./frontend
+    container_name: contratacion_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+# Explicación de Profesor: Los volúmenes permiten que los datos de tus contratos 
+# y empresas se guarden en tu disco real y no se borren al apagar el contenedor.
+volumes:
+  postgres_data:

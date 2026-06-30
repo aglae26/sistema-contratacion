@@ -1,0 +1,17 @@
+# Excluir carpetas de librerías locales (ya están dentro de Docker)
+backend/__pycache__/
+backend/.pytest_cache/
+frontend/node_modules/
+frontend/build/
+
+# Excluir archivos de configuración del IDE
+.vscode/
+.idea/
+
+# EXTREMADAMENTE IMPORTANTE: Excluir contraseñas y variables de entorno
+.env
+*.local
+
+# Excluir archivos temporales del sistema operativo
+desktop.ini
+Thumbs.db
