@@ -28,7 +28,7 @@ async def procesar_cedula(
         archivo_bytes = await file.read()
 
         # B) Inicializar el modelo pro de Gemini ideal para visión y análisis documental
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
 
         # C) Prompt Estructurado: Instrucciones estrictas para forzar una respuesta JSON
         prompt = (
