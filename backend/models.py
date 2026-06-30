@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
-from database import Base
+from database import Base 
 
 class Empresa(Base):
     __tablename__ = "empresas"
