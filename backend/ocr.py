@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/v1", tags=["OCR Inteligente"])
 
 # 1. Configuración de credenciales desde el sistema operativo del contenedor Docker
 API_KEY_SISTEMA = os.getenv("GEMINI_API_KEY")
-DRIVE_BRIDGE_URL = os.getenv("DRIVE_BRIDGE_URL")
+URL_PUENTE_OCR = os.getenv("URL_PUENTE_OCR")
 
 if not API_KEY_SISTEMA:
     raise RuntimeError(
@@ -79,7 +79,7 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
 
         # 4. Automatización con Google Drive a través del puente corporativo
         url_carpeta_drive = None
-        if DRIVE_BRIDGE_URL:
+        if URL_PUENTE_OCR:
             try:
                 # Codificar archivo a Base64 para adjuntarlo de manera segura en la carga útil HTTP
                 file_base64 = base64.b64encode(archivo_bytes).decode("utf-8")
@@ -95,7 +95,7 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
                 }
                 
                 # Despachar al microservicio de Google Apps Script (Tiempo de espera de 20 segundos)
-                response_drive = requests.post(DRIVE_BRIDGE_URL, json=payload, timeout=20)
+                response_drive = requests.post(URL_PUENTE_OCR, json=payload, timeout=20)
                 if response_drive.status_code == 200:
                     res_data = response_drive.json()
                     if res_data.get("status") == "success":
@@ -181,11 +181,11 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
 
     # 4. Despachar TODO el bloque de datos al puente de Google Workspace
     url_contrato = None
-    if DRIVE_BRIDGE_URL:
+    if URL_PUENTE_OCR:
         try:
             payload = {
                 "accion": "generar_contrato",
-                "plantilla_id": "1oDtuTXondXxlNpkgjPJS2scUurru7Cr3", # <- Recuerda verificar/poner el ID real de tu plantilla de Google Docs
+                "plantilla_id": "1f-T9T2xtGBYjx0PqCn6LtUs1NGk0kSPy", # <- Recuerda verificar/poner el ID real de tu plantilla de Google Docs
                 "nombres": db_empleado.nombres,
                 "apellidos": db_empleado.apellidos,
                 "tipo_documento": db_empleado.tipo_documento,
@@ -199,7 +199,7 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
                 "fecha_ingreso": str(nuevo_contrato.fecha_ingreso)
             }
             
-            res = requests.post(DRIVE_BRIDGE_URL, json=payload, timeout=25)
+            res = requests.post(URL_PUENTE_OCR, json=payload, timeout=25)
             if res.status_code == 200:
                 res_data = res.json()
                 if res_data.get("status") == "success":
