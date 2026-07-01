@@ -21,7 +21,7 @@ class Empleado(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombres = Column(String(100), nullable=False)
     apellidos = Column(String(100), nullable=False)
-    tipo_documento = Column(String(10), default="C.C.") # Captura si es C.C., C.E., etc.
+    tipo_documento = Column(String(50), nullable=False) 
     numero_documento = Column(String(20), unique=True, nullable=False, index=True)
     fecha_nacimiento = Column(Date, nullable=True)
     lugar_expedicion = Column(String(100), nullable=True)
