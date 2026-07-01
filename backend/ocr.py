@@ -50,7 +50,7 @@ async def procesar_cedula(
             '  "nombres": "Nombres de la persona en Mayúsculas",\n'
             '  "apellidos": "Apellidos de la persona en Mayúsculas",\n'
             '  "tipo_documento": "Tipo de documento",\n'
-            '  "numero_documento": "Solo los números sin puntos ni comas",\n'
+            '  "numero_documento": "Solo los números sin puntos ni comas\nEn caso de Permiso de Protección Temporal o Permiso de Protección Especial no tomas en cuenta el numero de la nacionalidad, solo el numero del documento.",\n'
             '  "fecha_nacimiento": "Formato AAAA-MM-DD",\n'
             '  "lugar_expedicion": "Municipio y departamento de expedición"\n'
             "}\n"
