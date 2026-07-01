@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/v1", tags=["OCR Inteligente"])
 # 1. Configuración de credenciales desde el sistema operativo del contenedor Docker
 API_KEY_SISTEMA = os.getenv("GEMINI_API_KEY")
 URL_PUENTE_OCR = os.getenv("URL_PUENTE_OCR")
+URL_PUENTE_PLANTILLAS = os.getenv("URL_PUENTE_PLANTILLAS")
 
 if not API_KEY_SISTEMA:
     raise RuntimeError(
@@ -179,13 +180,13 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
     db.add(nuevo_contrato)
     db.flush() # Obtiene el ID del contrato antes del commit final
 
-    # 4. Despachar TODO el bloque de datos al puente de Google Workspace
+    # 4. Despachar TODO el bloque de datos al puente exclusivo de PLANTILLAS
     url_contrato = None
-    if URL_PUENTE_OCR:
+    if URL_PUENTE_PLANTILLAS: # 👈 ¡CORREGIDO AQUÍ!
         try:
             payload = {
                 "accion": "generar_contrato",
-                "plantilla_id": "1f-T9T2xtGBYjx0PqCn6LtUs1NGk0kSPy", # <- Recuerda verificar/poner el ID real de tu plantilla de Google Docs
+                "plantilla_id": "1f-T9T2xtGBYjx0PqCn6LtUs1NGk0kSPy", # ID real de tu plantilla de Google Docs
                 "nombres": db_empleado.nombres,
                 "apellidos": db_empleado.apellidos,
                 "tipo_documento": db_empleado.tipo_documento,
@@ -199,7 +200,8 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
                 "fecha_ingreso": str(nuevo_contrato.fecha_ingreso)
             }
             
-            res = requests.post(URL_PUENTE_OCR, json=payload, timeout=25)
+            # Petición HTTP dirigida al microservicio de Google encargado de plantillas
+            res = requests.post(URL_PUENTE_PLANTILLAS, json=payload, timeout=25) # 👈 ¡CORREGIDO AQUÍ!
             if res.status_code == 200:
                 res_data = res.json()
                 if res_data.get("status") == "success":
