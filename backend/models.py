@@ -1,6 +1,6 @@
 import enum
 # pyrefly: ignore [missing-import]
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean, Enum
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 from database import Base 
