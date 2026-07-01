@@ -1,43 +1,40 @@
 version: '3.8'
 
 services:
-  # 1. El motor de la Base de Datos (PostgreSQL)
-  contratacion_db:
-    image: postgres:15
-    container_name: contratacion_postgres
+  # Base de Datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: mvp_postgres_db
     restart: always
     environment:
-      - POSTGRES_USER=user_contratacion
-      - POSTGRES_PASSWORD=pass_contratacion
-      - POSTGRES_DB=db_contratacion
+      - POSTGRES_USER=user_cedula
+      - POSTGRES_PASSWORD=pass_cedula
+      - POSTGRES_DB=db_cedula
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - contratacion_network
 
-  # 2. El Backend en Python (FastAPI + SQLAlchemy + Gemini)
+  # Backend (FastAPI + IA Gemini)
   backend:
     build: ./backend
-    container_name: contratacion_backend
+    container_name: mvp_fastapi_backend
     restart: always
     ports:
       - "8000:8000"
+    # Carga automáticamente todas las llaves del archivo .env local en el contenedor
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://user_contratacion:pass_contratacion@contratacion_db:5432/db_contratacion
-      - GEMINI_API_KEY=${GEMINI_API_KEY} # <-- Lee de forma ultra segura tu archivo .env local
-    volumes:
-      - ./backend:/app
+      - DATABASE_URL=postgresql://user_cedula:pass_cedula@db:5432/db_cedula
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
-      - contratacion_db
-    networks:
-      - contratacion_network
+      - db
 
-  # 3. El Frontend en JavaScript (React)
+  # Frontend (React UI)
   frontend:
     build: ./frontend
-    container_name: contratacion_frontend
+    container_name: mvp_react_frontend
     restart: always
     ports:
       - "3000:3000"
@@ -46,14 +43,6 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-    networks:
-      - contratacion_network
-
-# Definición de Recursos Compartidos (Redes y Volúmenes)
-networks:
-  contratacion_network:
-    driver: bridge
 
 volumes:
   postgres_data:
-    driver: local
