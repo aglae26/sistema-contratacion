@@ -1,8 +1,16 @@
+import enum
 # pyrefly: ignore [missing-import]
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 from database import Base 
+
+# 1. Definimos los estados permitidos como un Enum nativo de Python
+class EstadoEmpleado(str, enum.Enum):
+    REGISTRADO = "REGISTRADO"
+    EN_REVISION = "EN_REVISION"
+    APROBADO = "APROBADO"
+    CONTRATADO = "CONTRATADO"
 
 class Empresa(Base):
     __tablename__ = "empresas"
@@ -29,6 +37,13 @@ class Empleado(Base):
     telefono = Column(String(20), nullable=True)
 
     contratos = relationship("Contrato", back_populates="empleado")
+
+    # 2. Nueva columna: Mapea el Enum a la base de datos y le asigna 'REGISTRADO' por defecto
+    estado = Column(
+        Enum(EstadoEmpleado, name="estado_empleado_enum", create_type=True), 
+        default=EstadoEmpleado.REGISTRADO, 
+        nullable=False
+    )
 
 
 class Contrato(Base):
