@@ -1,18 +1,26 @@
 import os
 import json
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 import google.generativeai as genai
 import models
 from database import get_db
 
-# 1. Creamos el Router de FastAPI para agrupar los endpoints de IA
 router = APIRouter(prefix="/api/v1", tags=["OCR Inteligente"])
 
-# 2. Inicialización automática sugerida por la documentación oficial de Google.
-# El SDK buscará por sí solo la variable de entorno 'GEMINI_API_KEY' que Docker
-# inyecta de forma segura desde tu archivo local .env
-genai.configure()
+# 1. Leemos la variable directamente del sistema operativo del contenedor
+API_KEY_SISTEMA = os.getenv("GEMINI_API_KEY")
+
+# 2. Si viene vacía, lanzamos un error claro antes de que Google falle por el ADC
+if not API_KEY_SISTEMA:
+    raise RuntimeError(
+        "CRÍTICO: La variable de entorno 'GEMINI_API_KEY' no está configurada en el contenedor. "
+        "Verifica tu archivo .env y el docker-compose.yml."
+    )
+
+# 3. Configuramos el SDK con la llave del entorno
+genai.configure(api_key=API_KEY_SISTEMA)
 
 @router.post("/procesar-cedula")
 async def procesar_cedula(
