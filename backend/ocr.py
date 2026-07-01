@@ -39,7 +39,7 @@ async def procesar_cedula(
         archivo_bytes = await file.read()
 
         # B) Inicializar el modelo recomendado para el nivel gratuito (Free Tier de Costo $0)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
         # C) Prompt de ingeniería de instrucciones para asegurar la extracción exacta del formato colombiano
         prompt = (
