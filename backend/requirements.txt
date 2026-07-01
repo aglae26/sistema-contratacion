@@ -6,3 +6,4 @@ weasyprint==61.2
 sqlalchemy==2.0.28
 psycopg2-binary==2.9.9
 python-multipart==0.0.12
+requests==2.31.0
