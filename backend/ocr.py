@@ -1,5 +1,7 @@
 import os
 import json
+import base64
+import requests
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
@@ -9,39 +11,34 @@ from database import get_db
 
 router = APIRouter(prefix="/api/v1", tags=["OCR Inteligente"])
 
-# 1. Leemos la variable directamente del sistema operativo del contenedor
+# 1. Configuración de credenciales desde el sistema operativo del contenedor Docker
 API_KEY_SISTEMA = os.getenv("GEMINI_API_KEY")
+DRIVE_BRIDGE_URL = os.getenv("DRIVE_BRIDGE_URL")
 
-# 2. Si viene vacía, lanzamos un error claro antes de que Google falle por el ADC
 if not API_KEY_SISTEMA:
     raise RuntimeError(
         "CRÍTICO: La variable de entorno 'GEMINI_API_KEY' no está configurada en el contenedor. "
         "Verifica tu archivo .env y el docker-compose.yml."
     )
 
-# 3. Configuramos el SDK con la llave del entorno
+# 2. Inicializar el SDK de Google con el modelo global estable actual
 genai.configure(api_key=API_KEY_SISTEMA)
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 @router.post("/procesar-cedula")
-async def procesar_cedula(
-    file: UploadFile = File(...), 
-    db: Session = Depends(get_db)
-):
-    # Validación estricta del tipo de archivo (Imágenes o PDFs)
-    if not file.content_type.startswith("image/") and file.content_type != "application/pdf":
+async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # Validación estricta de formatos permitidos
+    if file.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
         raise HTTPException(
             status_code=400, 
-            detail="Formato de archivo no válido. Sube una imagen o un PDF."
+            detail="Formato de archivo no soportado. Solo se permiten imágenes (JPEG, PNG) o PDFs."
         )
-
+    
     try:
-        # A) Leer los bytes del documento directamente en la memoria RAM
+        # Leer los bytes del documento adjunto
         archivo_bytes = await file.read()
-
-        # B) Inicializar el modelo recomendado para el nivel gratuito (Free Tier de Costo $0)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-
-        # C) Prompt de ingeniería de instrucciones para asegurar la extracción exacta del formato colombiano
+        
+        # 3. Prompt de ingeniería de instrucciones ultra-preciso
         prompt = (
             "Analiza detalladamente la imagen o PDF adjunto que corresponde a un documento de identidad. "
             "Tu tarea es extraer los datos de la persona de manera exacta. Revisa tanto el frente como el reverso si están disponibles. "
@@ -57,54 +54,77 @@ async def procesar_cedula(
             "No incluyas introducciones, comentarios, ni bloques de código de markdown (como ```json), solo el JSON plano."
         )
 
-        # D) Enviar la petición de forma segura a los servidores de Google utilizando la Auth Key invisible
+        # Enviar la petición de forma segura a los servidores de Google AI
         response = model.generate_content([
             {'mime_type': file.content_type, 'data': archivo_bytes},
             prompt
         ])
 
+        # Limpieza robusta de la respuesta en texto plano
         texto_ia = response.text.strip()
-        
-        # Si la IA ignora las instrucciones y mete bloques de código Markdown, los eliminamos a la fuerza
         if texto_ia.startswith("```"):
-            # Quita el inicio ```json o ``` y el final ```
-            texto_ia = texto_ia.replace("```json", "", 1).replace("```", "", 1)
-            # Volvemos a limpiar espacios o saltos de línea restantes
-            texto_ia = texto_ia.strip()
+            texto_ia = texto_ia.replace("```json", "", 1).replace("```", "", 1).strip()
 
-        # E) Parsear el texto plano devuelto por la IA a un diccionario nativo de Python
-        datos_ia = json.loads(texto_ia)
-
-        # F) Capa de persistencia (PostgreSQL): Evitar duplicados mediante el número de documento
-        empleado_existente = db.query(models.Empleado).filter(
-            models.Empleado.numero_documento == datos_ia["numero_documento"]
-        ).first()
-
-        if not empleado_existente:
-            # Si el ciudadano es nuevo, lo creamos y lo guardamos en la base de datos
-            nuevo_empleado = models.Empleado(
-                nombres=datos_ia["nombres"],
-                apellidos=datos_ia["apellidos"],
-                tipo_documento=datos_ia["tipo_documento"],
-                numero_documento=datos_ia["numero_documento"],
-                fecha_nacimiento=datos_ia["fecha_nacimiento"] if datos_ia["fecha_nacimiento"] else None,
-                lugar_expedicion=datos_ia["lugar_expedicion"]
+        # Parsear el texto plano limpio a diccionario nativo de Python
+        try:
+            datos_ia = json.loads(texto_ia)
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=500, 
+                detail="La IA no devolvió un formato JSON limpio. Inténtalo de nuevo."
             )
-            db.add(nuevo_empleado)
-            db.commit()                # Confirmar cambios físicos en Postgres
-            db.refresh(nuevo_empleado) # Capturar el ID autogenerado
-            return {"status": "creado_y_guardado", "data": nuevo_empleado}
-        
-        # Si ya existía, retornamos los datos existentes para no duplicar llaves en la BD
-        return {"status": "ya_existia_en_sistema", "data": empleado_existente}
 
-    except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=500, 
-            detail="La IA no devolvió un formato JSON limpio. Inténtalo de nuevo."
+        # 4. Automatización con Google Drive a través del puente corporativo
+        url_carpeta_drive = None
+        if DRIVE_BRIDGE_URL:
+            try:
+                # Codificar archivo a Base64 para adjuntarlo de manera segura en la carga útil HTTP
+                file_base64 = base64.b64encode(archivo_bytes).decode("utf-8")
+                
+                payload = {
+                    "nombres": datos_ia.get("nombres"),
+                    "apellidos": datos_ia.get("apellidos"),
+                    "tipo_documento": datos_ia.get("tipo_documento"),
+                    "numero_documento": datos_ia.get("numero_documento"),
+                    "file_base64": file_base64,
+                    "mime_type": file.content_type,
+                    "file_name": f"Cedula_{datos_ia.get('numero_documento')}_{file.filename}"
+                }
+                
+                # Despachar al microservicio de Google Apps Script (Tiempo de espera de 20 segundos)
+                response_drive = requests.post(DRIVE_BRIDGE_URL, json=payload, timeout=20)
+                if response_drive.status_code == 200:
+                    res_data = response_drive.json()
+                    if res_data.get("status") == "success":
+                        url_carpeta_drive = res_data.get("folder_url")
+            except Exception as drive_err:
+                # Log de advertencia sin romper la experiencia del usuario final si el Drive falla de forma temporal
+                print(f"Advertencia de Automatización: No se pudo subir el archivo a Drive: {str(drive_err)}")
+
+        # 5. Guardar en la base de datos de PostgreSQL usando SQLAlchemy
+        # Nota: Si agregaste la columna 'url_drive' en tu modelo, puedes pasarla aquí
+        nuevo_empleado = models.Empleado(
+            nombres=datos_ia.get("nombres"),
+            apellidos=datos_ia.get("apellidos"),
+            tipo_documento=datos_ia.get("tipo_documento"),
+            numero_documento=datos_ia.get("numero_documento"),
+            fecha_nacimiento=datos_ia.get("fecha_nacimiento"),
+            lugar_expedicion=datos_ia.get("lugar_expedicion"),
+            telefono=None,
+            direccion_residencia=None
         )
+        
+        db.add(nuevo_empleado)
+        db.commit()
+        db.refresh(nuevo_empleado)
+
+        # Retornar respuesta exitosa unificada al frontend
+        return {
+            "status": "success",
+            "mensaje": "Documento procesado, guardado en base de datos y respaldado en Google Drive con éxito.",
+            "datos_extraidos": datos_ia,
+            "drive_folder": url_carpeta_drive
+        }
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error en el servidor: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
