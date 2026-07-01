@@ -43,13 +43,13 @@ async def procesar_cedula(
 
         # C) Prompt de ingeniería de instrucciones para asegurar la extracción exacta del formato colombiano
         prompt = (
-            "Analiza detalladamente la imagen o PDF adjunto que corresponde a una cédula de ciudadanía de Colombia. "
-            "Tu tarea es extraer los datos del ciudadano de manera exacta. Revisa tanto el frente como el reverso si están disponibles. "
+            "Analiza detalladamente la imagen o PDF adjunto que corresponde a un documento de identidad. "
+            "Tu tarea es extraer los datos de la persona de manera exacta. Revisa tanto el frente como el reverso si están disponibles. "
             "Debes responder **ÚNICAMENTE** con un objeto JSON plano que contenga exactamente estas llaves y formatos:\n"
             "{\n"
-            '  "nombres": "Nombres del ciudadano en Mayúsculas",\n'
-            '  "apellidos": "Apellidos del ciudadano en Mayúsculas",\n'
-            '  "tipo_documento": "C.C.",\n'
+            '  "nombres": "Nombres de la persona en Mayúsculas",\n'
+            '  "apellidos": "Apellidos de la persona en Mayúsculas",\n'
+            '  "tipo_documento": "Tipo de documento",\n'
             '  "numero_documento": "Solo los números sin puntos ni comas",\n'
             '  "fecha_nacimiento": "Formato AAAA-MM-DD",\n'
             '  "lugar_expedicion": "Municipio y departamento de expedición"\n'
@@ -63,8 +63,17 @@ async def procesar_cedula(
             prompt
         ])
 
+        texto_ia = response.text.strip()
+        
+        # Si la IA ignora las instrucciones y mete bloques de código Markdown, los eliminamos a la fuerza
+        if texto_ia.startswith("```"):
+            # Quita el inicio ```json o ``` y el final ```
+            texto_ia = texto_ia.replace("```json", "", 1).replace("```", "", 1)
+            # Volvemos a limpiar espacios o saltos de línea restantes
+            texto_ia = texto_ia.strip()
+
         # E) Parsear el texto plano devuelto por la IA a un diccionario nativo de Python
-        datos_ia = json.loads(response.text.strip())
+        datos_ia = json.loads(texto_ia)
 
         # F) Capa de persistencia (PostgreSQL): Evitar duplicados mediante el número de documento
         empleado_existente = db.query(models.Empleado).filter(
