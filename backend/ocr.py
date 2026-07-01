@@ -132,7 +132,7 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
 
-        # Esquema de validación para los datos mezclados de React
+    # Esquema de validación para los datos mezclados de React
 class EmpleadoContratoUpdate(BaseModel):
     # Datos del Empleado (Por si se corrigen)
     nombres: str
@@ -185,7 +185,7 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
         try:
             payload = {
                 "accion": "generar_contrato",
-                "plantilla_id": "TU_ID_DE_GOOGLE_DOC_PLANTILLA", # <- Pon aquí el ID real de tu plantilla
+                "plantilla_id": "1oDtuTXondXxlNpkgjPJS2scUurru7Cr3", # <- Recuerda verificar/poner el ID real de tu plantilla de Google Docs
                 "nombres": db_empleado.nombres,
                 "apellidos": db_empleado.apellidos,
                 "tipo_documento": db_empleado.tipo_documento,
@@ -216,3 +216,11 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
         "mensaje": "Datos del empleado actualizados, contrato registrado en DB y generado en Google Drive con éxito.",
         "contrato_url": url_contrato
     }
+
+@router.get("/empleados")
+def listar_empleados(db: Session = Depends(get_db)):
+    """
+    Retorna la lista completa de candidatos registrados en el sistema,
+    ordenados desde el más reciente para que React llene la tabla de control.
+    """
+    return db.query(models.Empleado).order_by(models.Empleado.id.desc()).all()
