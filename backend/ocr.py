@@ -29,7 +29,7 @@ async def procesar_cedula(
 
         # Inicializamos el modelo de forma limpia. Al estar configurada la API key globalmente,
         # el SDK dejará de buscar archivos de cuentas de servicio (ADC).
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
         prompt = (
             "Analiza detalladamente la imagen o PDF adjunto que corresponde a una cédula de ciudadanía de Colombia. "
