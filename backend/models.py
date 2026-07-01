@@ -1,6 +1,6 @@
 import enum
 # pyrefly: ignore [missing-import]
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean, Enum, ForeignKey
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 from database import Base 
@@ -33,12 +33,12 @@ class Empleado(Base):
     numero_documento = Column(String(20), unique=True, nullable=False, index=True)
     fecha_nacimiento = Column(Date, nullable=True)
     lugar_expedicion = Column(String(100), nullable=True)
-    direccion_residencia = Column(String(150), nullable=True) # Exigido por la plantilla
+    direccion_residencia = Column(String(200), nullable=True) 
     telefono = Column(String(20), nullable=True)
 
-    contratos = relationship("Contrato", back_populates="empleado")
+    # Relación con la tabla Contrato
+    contratos = relationship("Contrato", back_populates="empleado", cascade="all, delete-orphan")
 
-    # 2. Nueva columna: Mapea el Enum a la base de datos y le asigna 'REGISTRADO' por defecto
     estado = Column(
         Enum(EstadoEmpleado, name="estado_empleado_enum", create_type=True), 
         default=EstadoEmpleado.REGISTRADO, 

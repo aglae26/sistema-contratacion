@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 import google.generativeai as genai
 import models
 from database import get_db
+from pydantic import BaseModel
+from datetime import date
+from typing import Optional
 
 router = APIRouter(prefix="/api/v1", tags=["OCR Inteligente"])
 
@@ -128,3 +131,88 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
+
+        # Esquema de validación para los datos mezclados de React
+class EmpleadoContratoUpdate(BaseModel):
+    # Datos del Empleado (Por si se corrigen)
+    nombres: str
+    apellidos: str
+    tipo_documento: str
+    numero_documento: str
+    fecha_nacimiento: Optional[date] = None
+    lugar_expedicion: Optional[str] = None
+    direccion_residencia: Optional[str] = None
+    telefono: Optional[str] = None
+    
+    # Datos Manuales del Contrato
+    cargo: str
+    salario: str
+    fecha_ingreso: date
+
+@router.put("/empleados/{empleado_id}/aprobar")
+async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUpdate, db: Session = Depends(get_db)):
+    # 1. Buscar al empleado en la base de datos
+    db_empleado = db.query(models.Empleado).filter(models.Empleado.id == empleado_id).first()
+    if not db_empleado:
+        raise HTTPException(status_code=404, detail="Empleado no encontrado")
+    
+    # 2. Actualizar/Corregir los campos del empleado en la DB
+    db_empleado.nombres = datos.nombres
+    db_empleado.apellidos = datos.apellidos
+    db_empleado.tipo_documento = datos.tipo_documento
+    db_empleado.numero_documento = datos.numero_documento
+    db_empleado.fecha_nacimiento = datos.fecha_nacimiento
+    db_empleado.lugar_expedicion = datos.lugar_expedicion
+    db_empleado.direccion_residencia = datos.direccion_residencia
+    db_empleado.telefono = datos.telefono
+    
+    # Cambiar estado a APROBADO
+    db_empleado.estado = models.EstadoEmpleado.APROBADO
+    
+    # 3. Crear el registro físico del Contrato en la base de datos relacional
+    nuevo_contrato = models.Contrato(
+        empleado_id=db_empleado.id,
+        cargo=datos.cargo,
+        salario=datos.salario,
+        fecha_ingreso=datos.fecha_ingreso
+    )
+    db.add(nuevo_contrato)
+    db.flush() # Obtiene el ID del contrato antes del commit final
+
+    # 4. Despachar TODO el bloque de datos al puente de Google Workspace
+    url_contrato = None
+    if DRIVE_BRIDGE_URL:
+        try:
+            payload = {
+                "accion": "generar_contrato",
+                "plantilla_id": "TU_ID_DE_GOOGLE_DOC_PLANTILLA", # <- Pon aquí el ID real de tu plantilla
+                "nombres": db_empleado.nombres,
+                "apellidos": db_empleado.apellidos,
+                "tipo_documento": db_empleado.tipo_documento,
+                "numero_documento": db_empleado.numero_documento,
+                "fecha_nacimiento": str(db_empleado.fecha_nacimiento) if db_empleado.fecha_nacimiento else "",
+                "lugar_expedicion": db_empleado.lugar_expedicion or "",
+                "direccion": db_empleado.direccion_residencia or "",
+                "telefono": db_empleado.telefono or "",
+                "cargo": nuevo_contrato.cargo,
+                "salario": nuevo_contrato.salario,
+                "fecha_ingreso": str(nuevo_contrato.fecha_ingreso)
+            }
+            
+            res = requests.post(DRIVE_BRIDGE_URL, json=payload, timeout=25)
+            if res.status_code == 200:
+                res_data = res.json()
+                if res_data.get("status") == "success":
+                    url_contrato = res_data.get("contrato_url")
+                    # Vincular la URL del documento al contrato creado
+                    nuevo_contrato.url_documento_drive = url_contrato
+        except Exception as e:
+            print(f"Advertencia: No se pudo generar el Google Doc: {str(e)}")
+
+    db.commit()
+    
+    return {
+        "status": "success",
+        "mensaje": "Datos del empleado actualizados, contrato registrado en DB y generado en Google Drive con éxito.",
+        "contrato_url": url_contrato
+    }
