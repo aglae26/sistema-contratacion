@@ -148,6 +148,7 @@ class EmpleadoContratoUpdate(BaseModel):
     telefono: Optional[str] = None
     
     # Datos manuales o de control del Contrato
+    empresa_id: int
     tipo_contrato: str       # Requerido dinámicamente: 'INDEFINIDO', 'FIJO', 'TIEMPO_PARCIAL'
     cargo: str
     salario: str
@@ -164,7 +165,12 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
     if not db_empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
     
-    # B. Mapa inteligente de plantillas de Google Docs en Drive
+    # B. 🚨 CONSULTAR LA SOCIEDAD DIRECTAMENTE DE LA BASE DE DATOS
+    empresa_contratante = db.query(models.Empresa).filter(models.Empresa.id == datos.empresa_id).first()
+    if not empresa_contratante:
+        raise HTTPException(status_code=404, detail="La Sociedad seleccionada no existe en la base de datos")
+    
+    # C. Mapa inteligente de plantillas de Google Docs en Drive
     # ⚠️ REEMPLAZA estos IDs por los strings de tus Google Docs reales de la carpeta '01_Plantillas_Contratos'
     PLANTILLAS_CONTRATOS = {
         "INDEFINIDO": "1J_n_mpmOWWEeUNKF2vcuo38WFq1xSJvt22KiXJV_lEA",
@@ -227,6 +233,9 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
             payload = {
                 "accion": "generar_contrato",
                 "plantilla_id": id_plantilla_seleccionada,    # Envía dinámicamente la plantilla correcta
+                "empresa_id": str(empresa_contratante.id),
+                "empresa_razon_social": empresa_contratante.razon_social, # 👈 Leído desde PostgreSQL
+                "empresa_nit": empresa_contratante.nit,
                 "nombres": db_empleado.nombres,
                 "apellidos": db_empleado.apellidos,
                 "tipo_documento": db_empleado.tipo_documento,
@@ -260,6 +269,15 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
         "contrato_url": url_contrato_generado
     }
 
+    # =========================================================================
+# 🏢 4. ENDPOINT: LISTAR SOCIEDADES (PARA EL SELECT DE REACT)
+# =========================================================================
+@router.get("/sociedades")
+def listar_sociedades(db: Session = Depends(get_db)):
+    """
+    Retorna la lista de todas las sociedades registradas en PostgreSQL.
+    """
+    return db.query(models.Empresa).all()
 
 # =========================================================================
 # 📋 4. ENDPOINT: LISTAR EMPLEADOS (CONSOLA REACT)
