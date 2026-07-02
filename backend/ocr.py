@@ -9,7 +9,7 @@ import google.generativeai as genai
 import models
 from database import get_db
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 router = APIRouter(prefix="/api/v1", tags=["OCR Inteligente"])
@@ -133,9 +133,11 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
 
-    # Esquema de validación para los datos mezclados de React
+    # =========================================================================
+# 📝 2. ESQUEMAS DE VALIDACIÓN PYDANTIC (INTERFAZ REACT -> FASTAPI)
+# =========================================================================
 class EmpleadoContratoUpdate(BaseModel):
-    # Datos del Empleado (Por si se corrigen)
+    # Datos personales actualizables del Empleado
     nombres: str
     apellidos: str
     tipo_documento: str
@@ -145,19 +147,39 @@ class EmpleadoContratoUpdate(BaseModel):
     direccion_residencia: Optional[str] = None
     telefono: Optional[str] = None
     
-    # Datos Manuales del Contrato
+    # Datos manuales o de control del Contrato
+    tipo_contrato: str       # Requerido dinámicamente: 'INDEFINIDO', 'FIJO', 'TIEMPO_PARCIAL'
     cargo: str
     salario: str
     fecha_ingreso: date
 
+
+# =========================================================================
+# 🎯 3. ENDPOINT: APROBACIÓN Y GENERACIÓN DINÁMICA DE MINUTAS
+# =========================================================================
 @router.put("/empleados/{empleado_id}/aprobar")
 async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUpdate, db: Session = Depends(get_db)):
-    # 1. Buscar al empleado en la base de datos
+    # A. Buscar al candidato en la base de datos
     db_empleado = db.query(models.Empleado).filter(models.Empleado.id == empleado_id).first()
     if not db_empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
     
-    # 2. Actualizar/Corregir los campos del empleado en la DB
+    # B. Mapa inteligente de plantillas de Google Docs en Drive
+    # ⚠️ REEMPLAZA estos IDs por los strings de tus Google Docs reales de la carpeta '01_Plantillas_Contratos'
+    PLANTILLAS_CONTRATOS = {
+        "INDEFINIDO": "1J_n_mpmOWWEeUNKF2vcuo38WFq1xSJvt22KiXJV_lEA",
+        "INDEFINIDO_ABITA_MAREDU": "1O-Sga4_5qMINa9Vk_95pZdr0jOOkgaZsTd6AxJrIXrg",
+        "FIJO": "1E6A9h1O-d45OlFrGB064RbXM6Wu_I627cMlZXoAbjj8",
+        "TIEMPO_PARCIAL": "1JCH8mYlA1ZIo_QwFXwyHMTV77TOd5RlxAc77Xe23E-M"
+    }
+    
+    # Obtener plantilla asociada; si mandan un tipo inválido, usa INDEFINIDO por defecto
+    id_plantilla_seleccionada = PLANTILLAS_CONTRATOS.get(
+        datos.tipo_contrato.upper(), 
+        PLANTILLAS_CONTRATOS["INDEFINIDO"]
+    )
+
+    # C. Sincronizar y actualizar la información corregida del Empleado
     db_empleado.nombres = datos.nombres
     db_empleado.apellidos = datos.apellidos
     db_empleado.tipo_documento = datos.tipo_documento
@@ -167,26 +189,44 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
     db_empleado.direccion_residencia = datos.direccion_residencia
     db_empleado.telefono = datos.telefono
     
-    # Cambiar estado a APROBADO
+    # Transicionar el estado operativo del flujo
     db_empleado.estado = models.EstadoEmpleado.APROBADO
-    
-    # 3. Crear el registro físico del Contrato en la base de datos relacional
+
+    # D. Generar metadatos cronológicos obligatorios exigidos por tu models.py
+    hoy = datetime.now()
+    meses_es = [
+        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
+        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+    ]
+
+    # Intentar obtener una empresa por defecto de la DB para la llave foránea obligatoria (empresa_id)
+    empresa_defecto = db.query(models.Empresa).first()
+    id_empresa = empresa_defecto.id if empresa_defecto else 1
+
+    # E. Insertar el registro del contrato mapeando las columnas EXACTAS de tu Tabla 'contratos'
     nuevo_contrato = models.Contrato(
         empleado_id=db_empleado.id,
-        cargo=datos.cargo,
-        salario=datos.salario,
-        fecha_ingreso=datos.fecha_ingreso
+        empresa_id=id_empresa,                                # Requerido por la FK (RESTRICT)
+        tipo_contrato=datos.tipo_contrato.upper(),            # Guarda 'INDEFINIDO', 'FIJO', etc.
+        cargo_desempenar=datos.cargo,                         # Alineado con tu models.py
+        fecha_inicio_labores=datos.fecha_ingreso,             # Alineado con tu models.py
+        salario_numeros=float(datos.salario),                 # Convertido a flotante para Numeric(12,2)
+        salario_letras="VALOR ASIGNADO EN LETRAS",            # Requerido (nullable=False)
+        sede_trabajo="Sede Principal",                        # Requerido (nullable=False)
+        dia_firma=str(hoy.day),                               # Requerido (nullable=False)
+        mes_firma=meses_es[hoy.month - 1],                    # Requerido (nullable=False)
+        anio_firma=str(hoy.year)                              # Requerido (nullable=False)
     )
     db.add(nuevo_contrato)
-    db.flush() # Obtiene el ID del contrato antes del commit final
+    db.flush()  # Extrae el ID transaccional del contrato antes del Commit final
 
-    # 4. Despachar TODO el bloque de datos al puente exclusivo de PLANTILLAS
-    url_contrato = None
-    if URL_PUENTE_PLANTILLAS: # 👈 ¡CORREGIDO AQUÍ!
+    # F. Despachar los datos limpios al webhook exclusivo de PLANTILLAS
+    url_contrato_generado = None
+    if URL_PUENTE_PLANTILLAS:
         try:
             payload = {
                 "accion": "generar_contrato",
-                "plantilla_id": "1f-T9T2xtGBYjx0PqCn6LtUs1NGk0kSPy", # ID real de tu plantilla de Google Docs
+                "plantilla_id": id_plantilla_seleccionada,    # Envía dinámicamente la plantilla correcta
                 "nombres": db_empleado.nombres,
                 "apellidos": db_empleado.apellidos,
                 "tipo_documento": db_empleado.tipo_documento,
@@ -195,34 +235,39 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
                 "lugar_expedicion": db_empleado.lugar_expedicion or "",
                 "direccion": db_empleado.direccion_residencia or "",
                 "telefono": db_empleado.telefono or "",
-                "cargo": nuevo_contrato.cargo,
-                "salario": nuevo_contrato.salario,
-                "fecha_ingreso": str(nuevo_contrato.fecha_ingreso)
+                "cargo": nuevo_contrato.cargo_desempenar,
+                "salario": str(nuevo_contrato.salario_numeros),
+                "fecha_ingreso": str(nuevo_contrato.fecha_inicio_labores)
             }
             
-            # Petición HTTP dirigida al microservicio de Google encargado de plantillas
-            res = requests.post(URL_PUENTE_PLANTILLAS, json=payload, timeout=25) # 👈 ¡CORREGIDO AQUÍ!
+            # Petición dirigida de forma exacta al Apps Script de Minutas
+            res = requests.post(URL_PUENTE_PLANTILLAS, json=payload, timeout=25)
             if res.status_code == 200:
                 res_data = res.json()
                 if res_data.get("status") == "success":
-                    url_contrato = res_data.get("contrato_url")
-                    # Vincular la URL del documento al contrato creado
-                    nuevo_contrato.url_documento_drive = url_contrato
+                    url_contrato_generado = res_data.get("contrato_url")
+                    # Nota: Si en el futuro agregas la columna url_documento_drive en Contrato, lo asignas aquí:
+                    # nuevo_contrato.url_documento_drive = url_contrato_generado
         except Exception as e:
-            print(f"Advertencia: No se pudo generar el Google Doc: {str(e)}")
+            print(f"Advertencia del sistema de Plantillas: No se pudo inyectar el Google Doc: {str(e)}")
 
+    # Consolidar todas las inserciones y actualizaciones en PostgreSQL
     db.commit()
     
     return {
         "status": "success",
-        "mensaje": "Datos del empleado actualizados, contrato registrado en DB y generado en Google Drive con éxito.",
-        "contrato_url": url_contrato
+        "mensaje": f"Contrato de tipo {datos.tipo_contrato} procesado correctamente.",
+        "contrato_url": url_contrato_generado
     }
 
+
+# =========================================================================
+# 📋 4. ENDPOINT: LISTAR EMPLEADOS (CONSOLA REACT)
+# =========================================================================
 @router.get("/empleados")
 def listar_empleados(db: Session = Depends(get_db)):
     """
-    Retorna la lista completa de candidatos registrados en el sistema,
-    ordenados desde el más reciente para que React llene la tabla de control.
+    Retorna la lista completa de candidatos en orden descendente 
+    para poblar la tabla principal del frontend de Gestión Humana.
     """
     return db.query(models.Empleado).order_by(models.Empleado.id.desc()).all()
