@@ -127,13 +127,13 @@ function App() {
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '30px', fontFamily: 'Arial, sans-serif', color: '#333' }}>
             <header style={{ borderBottom: '2px solid #eaeaea', paddingBottom: '15px', marginBottom: '30px' }}>
                 <h1 style={{ margin: 0, fontSize: '28px' }}>🚀 Sistema Inteligente de Gestión Documental y Contratación</h1>
-                <p style={{ color: '#666', marginTop: '5px' }}>Procesamiento a costo $0 con IA Gemini 2.5, PostgreSQL y Google Workspace Automation.</p>
+                {/*<p style={{ color: '#666', marginTop: '5px' }}></p>*/}
             </header>
 
             {/* SECCIÓN 1: MOTOR DE INGESTA OCR */}
             <section style={{ backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '8px', border: '1px solid #e1e1e1', marginBottom: '40px' }}>
-                <h3 style={{ marginTop: 0 }}>📂 Ingesta de Nuevos Candidatos</h3>
-                <p style={{ fontSize: '14px', color: '#555' }}>Sube el PDF, JPEG o PNG del documento de identidad. La IA extraerá los datos en segundo plano.</p>
+                <h3 style={{ marginTop: 0 }}>📂 Nuevos Candidatos</h3>
+                <p style={{ fontSize: '14px', color: '#555' }}>Sube el PDF, JPEG o PNG del documento de identidad.</p>
 
                 <form onSubmit={manejarEnvioOCR} style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '15px' }}>
                     <input
@@ -160,7 +160,7 @@ function App() {
 
             {/* SECCIÓN 2: PANEL DE CONTROL Y CONTROL DE ESTADOS */}
             <section>
-                <h3 style={{ marginBottom: '15px' }}>📋 Consola de Gestión de Talento Humano</h3>
+                <h3 style={{ marginBottom: '15px' }}>📋 Consola de Gestión Humana</h3>
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
                     <thead>
