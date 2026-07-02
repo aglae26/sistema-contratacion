@@ -258,6 +258,7 @@ function App() {
                                 style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff', fontFamily: 'Arial, sans-serif' }}
                             >
                                 <option value="INDEFINIDO">Contrato Término Indefinido</option>
+                                <option value="INDEFINIDO_ABITA_MAREDU">Contrato Término Indefinido Abita/Maredu</option>
                                 <option value="FIJO">Contrato Término Fijo</option>
                                 <option value="TIEMPO_PARCIAL">Contrato Tiempo Parcial</option>
                             </select>
