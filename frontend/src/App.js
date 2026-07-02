@@ -16,6 +16,7 @@ function App() {
     const [formulario, setFormulario] = useState({
         nombres: '', apellidos: '', tipo_documento: '', numero_documento: '',
         fecha_nacimiento: '', lugar_expedicion: '', direccion_residencia: '', telefono: '',
+        tipo_contrato: 'INDEFINIDO', // 👈 ¡AGREGADO AQUÍ EL VALOR INICIAL!
         cargo: '', salario: '', fecha_ingreso: ''
     });
 
@@ -88,6 +89,7 @@ function App() {
             lugar_expedicion: emp.lugar_expedicion || '',
             direccion_residencia: emp.direccion_residencia || '',
             telefono: emp.telefono || '',
+            tipo_contrato: 'INDEFINIDO', // 👈 ¡RESETEA A INDEFINIDO AL ABRIR UN NUEVO CANDIDATO!
             cargo: '', // Nace vacío para digitación obligatoria manual
             salario: '', // Nace vacío para digitación obligatoria manual
             fecha_ingreso: new Date().toISOString().split('T')[0] // Sugiere la fecha de hoy
@@ -102,7 +104,7 @@ function App() {
             const res = await fetch(`http://localhost:8000/api/v1/empleados/${empleadoSeleccionado.id}/aprobar`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formulario)
+                body: JSON.stringify(formulario) // 👈 Envía el JSON completo incluyendo tipo_contrato
             });
             const resultado = await res.json();
 
@@ -127,7 +129,6 @@ function App() {
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '30px', fontFamily: 'Arial, sans-serif', color: '#333' }}>
             <header style={{ borderBottom: '2px solid #eaeaea', paddingBottom: '15px', marginBottom: '30px' }}>
                 <h1 style={{ margin: 0, fontSize: '28px' }}>🚀 Sistema Inteligente de Gestión Documental y Contratación</h1>
-                {/*<p style={{ color: '#666', marginTop: '5px' }}></p>*/}
             </header>
 
             {/* SECCIÓN 1: MOTOR DE INGESTA OCR */}
@@ -248,6 +249,18 @@ function App() {
                             <input type="text" value={formulario.telefono} onChange={e => setFormulario({ ...formulario, telefono: e.target.value })} placeholder="Ej: 3124567890" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
 
                             <h4 style={{ color: '#4a5568', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #edf2f7', paddingBottom: '5px' }}>2. Cláusulas y Datos de Contratación (Manual)</h4>
+
+                            {/* 🚨 ¡NUEVO ELEMENTO: SELECTOR DINÁMICO DE MINUTAS DE CONTRATO! 🚨 */}
+                            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Tipo de Contrato / Minuta:</label>
+                            <select
+                                value={formulario.tipo_contrato}
+                                onChange={e => setFormulario({ ...formulario, tipo_contrato: e.target.value })}
+                                style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff', fontFamily: 'Arial, sans-serif' }}
+                            >
+                                <option value="INDEFINIDO">Contrato Término Indefinido</option>
+                                <option value="FIJO">Contrato Término Fijo</option>
+                                <option value="TIEMPO_PARCIAL">Contrato Tiempo Parcial</option>
+                            </select>
 
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Cargo Estipulado:</label>
                             <input type="text" value={formulario.cargo} onChange={e => setFormulario({ ...formulario, cargo: e.target.value })} required placeholder="Ej: Ingeniero de Datos Senior" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
