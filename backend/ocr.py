@@ -148,44 +148,68 @@ class EmpleadoContratoUpdate(BaseModel):
     telefono: Optional[str] = None
     
     # Datos manuales o de control del Contrato
-    empresa_id: int
-    tipo_contrato: str       # Requerido dinámicamente: 'INDEFINIDO', 'FIJO', 'TIEMPO_PARCIAL'
+    empresa_id: int          # ID de la sociedad seleccionada
+    sede_id: int             # 👈 ID de la sede (>0: DB, 0: Manual, -1: No aplica)
+    sede_manual: Optional[str] = None  # 👈 NUEVO: Captura el texto si digitan a mano
+    tipo_contrato: str       # 'INDEFINIDO_ESTANDAR', 'INDEFINIDO_ABITA', 'FIJO', 'TIEMPO_PARCIAL'
     cargo: str
     salario: str
     fecha_ingreso: date
 
 
 # =========================================================================
-# 🎯 3. ENDPOINT: APROBACIÓN Y GENERACIÓN DINÁMICA DE MINUTAS
+# 🎯 3. ENDPOINT: APROBACIÓN Y AUTOMATIZACIÓN DE CONTRATOS
 # =========================================================================
 @router.put("/empleados/{empleado_id}/aprobar")
 async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUpdate, db: Session = Depends(get_db)):
-    # A. Buscar al candidato en la base de datos
+    # A. Verificar existencia del Empleado
     db_empleado = db.query(models.Empleado).filter(models.Empleado.id == empleado_id).first()
     if not db_empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
     
-    # B. 🚨 CONSULTAR LA SOCIEDAD DIRECTAMENTE DE LA BASE DE DATOS
+    # B. Consultar la Sociedad directamente de PostgreSQL
     empresa_contratante = db.query(models.Empresa).filter(models.Empresa.id == datos.empresa_id).first()
     if not empresa_contratante:
         raise HTTPException(status_code=404, detail="La Sociedad seleccionada no existe en la base de datos")
-    
-    # C. Mapa inteligente de plantillas de Google Docs en Drive
-    # ⚠️ REEMPLAZA estos IDs por los strings de tus Google Docs reales de la carpeta '01_Plantillas_Contratos'
+
+    # C. 🧠 LÓGICA INTELIGENTE PARA DETERMINAR LOS DATOS DE LA SEDE
+    nombre_sede = "No aplica"
+    ciudad_sede = "No aplica"
+    depto_sede = "No aplica"
+
+    if datos.sede_id > 0:
+        # Caso 1: La sede existe en la Base de Datos
+        sede_seleccionada = db.query(models.Sede).filter(models.Sede.id == datos.sede_id).first()
+        if not sede_seleccionada:
+            raise HTTPException(status_code=404, detail="La Sede seleccionada no existe")
+        nombre_sede = sede_seleccionada.nombre
+        ciudad_sede = sede_seleccionada.ciudad or "Por definir"
+        depto_sede = sede_seleccionada.departamento or "Por definir"
+        
+    elif datos.sede_id == 0:
+        # Caso 2: El usuario digitó la sede a mano en React
+        if not datos.sede_manual:
+            raise HTTPException(status_code=422, detail="Debes ingresar la dirección de la sede manual")
+        nombre_sede = datos.sede_manual
+        ciudad_sede = "Especificada en texto"
+        depto_sede = "Especificada en texto"
+        
+    # Nota: Si datos.sede_id == -1, se salta el bloque y conserva los valores "No aplica"
+
+    # D. Diccionario de enrutamiento para tus 4 plantillas de Google Drive
     PLANTILLAS_CONTRATOS = {
-        "INDEFINIDO": "1J_n_mpmOWWEeUNKF2vcuo38WFq1xSJvt22KiXJV_lEA",
-        "INDEFINIDO_ABITA_MAREDU": "1O-Sga4_5qMINa9Vk_95pZdr0jOOkgaZsTd6AxJrIXrg",
-        "FIJO": "1E6A9h1O-d45OlFrGB064RbXM6Wu_I627cMlZXoAbjj8",
-        "TIEMPO_PARCIAL": "1JCH8mYlA1ZIo_QwFXwyHMTV77TOd5RlxAc77Xe23E-M"
+        "INDEFINIDO_ESTANDAR": "ID_DE_CONTRATO_TERMINO_INDEFINIDO_STANDARD",
+        "INDEFINIDO_ABITA": "ID_DE_CONTRATO_TERMINO_INDEFINIDO_ABITA_MAREDU",
+        "FIJO": "1E6A9h1O-d45OlFrGB064RbXM6Wu_I627cMlZXoAbjj8", 
+        "TIEMPO_PARCIAL": "ID_DE_CONTRATO_EMPLEADO_TIEMPO_PARCIAL"
     }
     
-    # Obtener plantilla asociada; si mandan un tipo inválido, usa INDEFINIDO por defecto
     id_plantilla_seleccionada = PLANTILLAS_CONTRATOS.get(
         datos.tipo_contrato.upper(), 
-        PLANTILLAS_CONTRATOS["INDEFINIDO"]
+        PLANTILLAS_CONTRATOS["INDEFINIDO_ESTANDAR"]
     )
 
-    # C. Sincronizar y actualizar la información corregida del Empleado
+    # E. Sincronizar y actualizar datos del candidato
     db_empleado.nombres = datos.nombres
     db_empleado.apellidos = datos.apellidos
     db_empleado.tipo_documento = datos.tipo_documento
@@ -194,54 +218,49 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
     db_empleado.lugar_expedicion = datos.lugar_expedicion
     db_empleado.direccion_residencia = datos.direccion_residencia
     db_empleado.telefono = datos.telefono
-    
-    # Transicionar el estado operativo del flujo
     db_empleado.estado = models.EstadoEmpleado.APROBADO
-
-    # D. Generar metadatos cronológicos obligatorios exigidos por tu models.py
+    
+    # F. Metadatos cronológicos para las cláusulas de cierre
     hoy = datetime.now()
-    meses_es = [
-        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
-        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
-    ]
+    meses_es = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
 
-    # Intentar obtener una empresa por defecto de la DB para la llave foránea obligatoria (empresa_id)
-    empresa_defecto = db.query(models.Empresa).first()
-    id_empresa = empresa_defecto.id if empresa_defecto else 1
-
-    # E. Insertar el registro del contrato mapeando las columnas EXACTAS de tu Tabla 'contratos'
+    # G. Registrar el contrato en PostgreSQL
     nuevo_contrato = models.Contrato(
         empleado_id=db_empleado.id,
-        empresa_id=id_empresa,                                # Requerido por la FK (RESTRICT)
-        tipo_contrato=datos.tipo_contrato.upper(),            # Guarda 'INDEFINIDO', 'FIJO', etc.
-        cargo_desempenar=datos.cargo,                         # Alineado con tu models.py
-        fecha_inicio_labores=datos.fecha_ingreso,             # Alineado con tu models.py
-        salario_numeros=float(datos.salario),                 # Convertido a flotante para Numeric(12,2)
-        salario_letras="VALOR ASIGNADO EN LETRAS",            # Requerido (nullable=False)
-        sede_trabajo="Sede Principal",                        # Requerido (nullable=False)
-        dia_firma=str(hoy.day),                               # Requerido (nullable=False)
-        mes_firma=meses_es[hoy.month - 1],                    # Requerido (nullable=False)
-        anio_firma=str(hoy.year)                              # Requerido (nullable=False)
+        empresa_id=empresa_contratante.id,
+        tipo_contrato=datos.tipo_contrato.upper(),            
+        cargo_desempenar=datos.cargo,                         
+        fecha_inicio_labores=datos.fecha_ingreso,             
+        salario_numeros=float(datos.salario),                 
+        salario_letras="VALOR CALCULADO EN LETRAS",            
+        sede_trabajo=nombre_sede,                             
+        ciudad=ciudad_sede,                                   
+        departamento=depto_sede,                               
+        dia_firma=str(hoy.day),                               
+        mes_firma=meses_es[hoy.month - 1],                    
+        anio_firma=str(hoy.year)                              
     )
     db.add(nuevo_contrato)
-    db.flush()  # Extrae el ID transaccional del contrato antes del Commit final
+    db.flush()
 
-    # F. Despachar los datos limpios al webhook exclusivo de PLANTILLAS
+    # H. Despachar el payload extendido al Apps Script de Google Drive
     url_contrato_generado = None
     if URL_PUENTE_PLANTILLAS:
         try:
             payload = {
                 "accion": "generar_contrato",
-                "plantilla_id": id_plantilla_seleccionada,    # Envía dinámicamente la plantilla correcta
+                "plantilla_id": id_plantilla_seleccionada,
                 "empresa_id": str(empresa_contratante.id),
-                "empresa_razon_social": empresa_contratante.razon_social, # 👈 Leído desde PostgreSQL
+                "empresa_razon_social": empresa_contratante.razon_social,
                 "empresa_nit": empresa_contratante.nit,
+                "sede_trabajo": nuevo_contrato.sede_trabajo,         # Mapeado a {{sede_trabajo}}
+                "ciudad": nuevo_contrato.ciudad or "",               # Mapeado a {{ciudad}}
+                "departamento": nuevo_contrato.departamento or "",   # Mapeado a {{departamento}}
                 "nombres": db_empleado.nombres,
                 "apellidos": db_empleado.apellidos,
                 "tipo_documento": db_empleado.tipo_documento,
                 "numero_documento": db_empleado.numero_documento,
                 "fecha_nacimiento": str(db_empleado.fecha_nacimiento) if db_empleado.fecha_nacimiento else "",
-                "lugar_expedicion": db_empleado.lugar_expedicion or "",
                 "direccion": db_empleado.direccion_residencia or "",
                 "telefono": db_empleado.telefono or "",
                 "cargo": nuevo_contrato.cargo_desempenar,
@@ -249,43 +268,61 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
                 "fecha_ingreso": str(nuevo_contrato.fecha_inicio_labores)
             }
             
-            # Petición dirigida de forma exacta al Apps Script de Minutas
             res = requests.post(URL_PUENTE_PLANTILLAS, json=payload, timeout=25)
             if res.status_code == 200:
                 res_data = res.json()
                 if res_data.get("status") == "success":
                     url_contrato_generado = res_data.get("contrato_url")
-                    # Nota: Si en el futuro agregas la columna url_documento_drive en Contrato, lo asignas aquí:
-                    # nuevo_contrato.url_documento_drive = url_contrato_generado
         except Exception as e:
-            print(f"Advertencia del sistema de Plantillas: No se pudo inyectar el Google Doc: {str(e)}")
+            print(f"Error en comunicación con Google: {str(e)}")
 
-    # Consolidar todas las inserciones y actualizaciones en PostgreSQL
     db.commit()
-    
     return {
-        "status": "success",
-        "mensaje": f"Contrato de tipo {datos.tipo_contrato} procesado correctamente.",
+        "status": "success", 
+        "mensaje": "Contrato procesado y generado de forma dinámica exitosamente.", 
         "contrato_url": url_contrato_generado
     }
 
+
 # =========================================================================
-# 🏢 4. ENDPOINT: LISTAR SOCIEDADES (PARA EL SELECT DE REACT)
+# 🏢 4. ENDPOINTS DE CONSULTA DINÁMICA (PARA EL FLUJO DE REACT)
 # =========================================================================
 @router.get("/sociedades")
 def listar_sociedades(db: Session = Depends(get_db)):
     """
-    Retorna la lista de todas las sociedades registradas en PostgreSQL.
+    Retorna las sociedades y siembra datos iniciales de prueba SIN dirección en la empresa.
     """
+    if db.query(models.Empresa).count() == 0:
+        # Empresa 1 (Quitamos el parámetro direccion=...)
+        sociedad1 = models.Empresa(nit="901.234.567-1", razon_social="Logística y Distribución S.A.S.")
+        db.add(sociedad1)
+        db.flush()
+        
+        sede1_1 = models.Sede(nombre="Planta Principal Bogotá", direccion="Calle 13 #68-40", ciudad="Bogotá", departamento="Cundinamarca", empresa_id=sociedad1.id)
+        sede1_2 = models.Sede(nombre="Bodega Occidente Cali", direccion="Av. 4N #23-10", ciudad="Cali", departamento="Valle del Cauca", empresa_id=sociedad1.id)
+        db.add_all([sede1_1, sede1_2])
+
+        # Empresa 2 (Quitamos el parámetro direccion=...)
+        sociedad2 = models.Empresa(nit="800.987.654-2", razon_social="Servicios Integrales de Personal Ltda")
+        db.add(sociedad2)
+        db.flush()
+        
+        sede2_1 = models.Sede(nombre="Oficina Norte Manizales", direccion="Calle 64A N° 21-50 of. 1601", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad2.id)
+        db.add(sede2_1)
+        
+        db.commit()
+        
     return db.query(models.Empresa).all()
 
-# =========================================================================
-# 📋 4. ENDPOINT: LISTAR EMPLEADOS (CONSOLA REACT)
-# =========================================================================
+
+@router.get("/empresas/{empresa_id}/sedes")
+def listar_sedes_por_empresa(empresa_id: int, db: Session = Depends(get_db)):
+    """
+    Retorna únicamente las sedes que pertenecen al id de la empresa consultada.
+    """
+    return db.query(models.Sede).filter(models.Sede.empresa_id == empresa_id).all()
+
+
 @router.get("/empleados")
 def listar_empleados(db: Session = Depends(get_db)):
-    """
-    Retorna la lista completa de candidatos en orden descendente 
-    para poblar la tabla principal del frontend de Gestión Humana.
-    """
     return db.query(models.Empleado).order_by(models.Empleado.id.desc()).all()

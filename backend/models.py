@@ -18,7 +18,8 @@ class Empresa(Base):
     id = Column(Integer, primary_key=True, index=True)
     nit = Column(String(20), unique=True, nullable=False, index=True)
     razon_social = Column(String(150), nullable=False)
-    direccion = Column(String(150), nullable=True)
+
+    sedes = relationship("Sede", back_populates="empresa", cascade="all, delete-orphan")
     
     contratos = relationship("Contrato", back_populates="empresa")
 
@@ -86,3 +87,18 @@ class Contrato(Base):
     # Relaciones
     empleado = relationship("Empleado", back_populates="contratos")
     empresa = relationship("Empresa", back_populates="contratos")
+
+class Sede(Base):
+    __tablename__ = "sedes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(100), nullable=False)      # Ej: "Planta Principal", "Bodega Sur", "Finca La María"
+    direccion = Column(String(200), nullable=False)   # La dirección exacta de esa sede
+    ciudad = Column(String(100), nullable=True)
+    departamento = Column(String(100), nullable=True)
+
+    # Llave foránea para saber a qué empresa pertenece esta sede
+    empresa_id = Column(Integer, ForeignKey("empresas.id", ondelete="CASCADE"))
+    
+    # Relación inversa
+    empresa = relationship("Empresa", back_populates="sedes")
