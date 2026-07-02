@@ -133,7 +133,7 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
 
-    # =========================================================================
+# =========================================================================
 # 📝 2. ESQUEMAS DE VALIDACIÓN PYDANTIC (INTERFAZ REACT -> FASTAPI)
 # =========================================================================
 class EmpleadoContratoUpdate(BaseModel):
@@ -269,7 +269,7 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
         "contrato_url": url_contrato_generado
     }
 
-    # =========================================================================
+# =========================================================================
 # 🏢 4. ENDPOINT: LISTAR SOCIEDADES (PARA EL SELECT DE REACT)
 # =========================================================================
 @router.get("/sociedades")
