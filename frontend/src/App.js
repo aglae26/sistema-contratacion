@@ -16,6 +16,8 @@ function App() {
     const [formulario, setFormulario] = useState({
         nombres: '', apellidos: '', tipo_documento: '', numero_documento: '',
         fecha_nacimiento: '', lugar_expedicion: '', direccion_residencia: '', telefono: '',
+        aplica_sede: true,          // 👈 Controla si el checkbox está marcado
+        sede_manual: '',            // 👈 Campo de texto que ahora aparece condicionalmente
         tipo_contrato: 'INDEFINIDO', // 👈 ¡AGREGADO AQUÍ EL VALOR INICIAL!
         cargo: '', salario: '', fecha_ingreso: ''
     });
@@ -89,22 +91,49 @@ function App() {
             lugar_expedicion: emp.lugar_expedicion || '',
             direccion_residencia: emp.direccion_residencia || '',
             telefono: emp.telefono || '',
-            tipo_contrato: 'INDEFINIDO', // 👈 ¡RESETEA A INDEFINIDO AL ABRIR UN NUEVO CANDIDATO!
-            cargo: '', // Nace vacío para digitación obligatoria manual
-            salario: '', // Nace vacío para digitación obligatoria manual
-            fecha_ingreso: new Date().toISOString().split('T')[0] // Sugiere la fecha de hoy
+
+            // 🚨 CONFIGURACIÓN POR DEFECTO PARA EL NUEVO FLUJO 🚨
+            empresa_id: empresas[0]?.id || '', // Sugiere la primera empresa cargada
+            sede_id: '',                       // Nace limpio para que se dispare la carga
+            aplica_sede: true,                 // Por defecto, asumimos que sí trabaja en una sede
+            sede_manual: '',                   // Vacío por si acaso
+
+            tipo_contrato: 'INDEFINIDO_ESTANDAR',
+            cargo: '',
+            salario: '',
+            fecha_ingreso: new Date().toISOString().split('T')[0]
         });
+
+        // Disparar inmediatamente la carga de sedes de la primera empresa sugerida
+        if (empresas.length > 0) {
+            cargarSedesDeEmpresa(empresas[0].id);
+        }
     };
 
     // 5. Despachar aprobación final y disparar la creación de la plantilla de Google Docs
     const manejarAprobacionContrato = async (e) => {
         e.preventDefault();
         setCargandoContrato(true);
+
+        // 🧠 Conversión inteligente alineada con ocr.py
+        let sedeIdFinal = formulario.sede_id;
+
+        if (!formulario.aplica_sede) {
+            sedeIdFinal = -1; // 👈 Le dice a Python: "No aplica"
+        } else if (formulario.sede_id === "MANUAL") {
+            sedeIdFinal = 0;  // 👈 Le dice a Python: "Usa el texto de 'sede_manual'"
+        }
+
         try {
             const res = await fetch(`http://localhost:8000/api/v1/empleados/${empleadoSeleccionado.id}/aprobar`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formulario) // 👈 Envía el JSON completo incluyendo tipo_contrato
+                body: JSON.stringify({
+                    ...formulario,
+                    sede_id: parseInt(sedeIdFinal), // 👈 Obligatorio enviarlo como Entero
+                    // Enviamos explícitamente el texto manual por si se necesita
+                    sede_manual: formulario.sede_id === "MANUAL" ? formulario.sede_manual : null
+                })
             });
             const resultado = await res.json();
 
