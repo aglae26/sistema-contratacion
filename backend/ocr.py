@@ -198,10 +198,10 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
 
     # D. Diccionario de enrutamiento para tus 4 plantillas de Google Drive
     PLANTILLAS_CONTRATOS = {
-        "INDEFINIDO_ESTANDAR": "ID_DE_CONTRATO_TERMINO_INDEFINIDO_STANDARD",
-        "INDEFINIDO_ABITA": "ID_DE_CONTRATO_TERMINO_INDEFINIDO_ABITA_MAREDU",
+        "INDEFINIDO_ESTANDAR": "1J_n_mpmOWWEeUNKF2vcuo38WFq1xSJvt22KiXJV_lEA",
+        "INDEFINIDO_ABITA": "1O-Sga4_5qMINa9Vk_95pZdr0jOOkgaZsTd6AxJrIXrg",
         "FIJO": "1E6A9h1O-d45OlFrGB064RbXM6Wu_I627cMlZXoAbjj8", 
-        "TIEMPO_PARCIAL": "ID_DE_CONTRATO_EMPLEADO_TIEMPO_PARCIAL"
+        "TIEMPO_PARCIAL": "1JCH8mYlA1ZIo_QwFXwyHMTV77TOd5RlxAc77Xe23E-M"
     }
     
     id_plantilla_seleccionada = PLANTILLAS_CONTRATOS.get(
