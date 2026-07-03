@@ -6,19 +6,25 @@ function App() {
     const [procesandoOCR, setProcesandoOCR] = useState(false);
     const [resultadoOCR, setResultadoOCR] = useState(null);
 
-    // --- ESTADOS DEL MÓDULO 2: TABLA DE CONTROL ---
+    // --- ESTADOS DEL MÓDULO 2: PANEL DE CONTROL Y CONFIGURACIÓN ---
     const [empleados, setEmpleados] = useState([]);
     const [paginaActual, setPaginaActual] = useState(1);
     const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
     const [cargandoContrato, setCargandoContrato] = useState(false);
 
+    // 🚨 NUEVOS ESTADOS COMPLEMENTARIOS PARA LA ASOCIACIÓN MULTIEMPRESA 🚨
+    const [sociedades, setSociedades] = useState([]); // Almacena las empresas de PostgreSQL
+    const [sedesDisponibles, setSedesDisponibles] = useState([]); // Almacena las sedes filtradas
+
     // Campos del Formulario Unificado (Datos IA + Datos Manuales)
     const [formulario, setFormulario] = useState({
         nombres: '', apellidos: '', tipo_documento: '', numero_documento: '',
         fecha_nacimiento: '', lugar_expedicion: '', direccion_residencia: '', telefono: '',
-        aplica_sede: true,          // 👈 Controla si el checkbox está marcado
-        sede_manual: '',            // 👈 Campo de texto que ahora aparece condicionalmente
-        tipo_contrato: 'INDEFINIDO', // 👈 ¡AGREGADO AQUÍ EL VALOR INICIAL!
+        empresa_id: '',
+        sede_id: '',
+        aplica_sede: true,          // Controla si el checkbox está marcado
+        sede_manual: '',            // Campo de texto que aparece condicionalmente
+        tipo_contrato: 'INDEFINIDO_ESTANDAR',
         cargo: '', salario: '', fecha_ingreso: ''
     });
 
@@ -37,8 +43,41 @@ function App() {
         }
     };
 
+    // 🏢 NUEVO: Cargar catálogo de sociedades desde el Backend
+    const obtenerSociedades = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/v1/sociedades');
+            if (res.ok) {
+                const data = await res.json();
+                setSociedades(data);
+            }
+        } catch (err) {
+            console.error("Error al conectar con el catálogo de sociedades:", err);
+        }
+    };
+
+    // 📍 NUEVO: Cargar sedes encadenadas de forma reactiva según la empresa elegida
+    const cargarSedesDeEmpresa = async (empresaId) => {
+        if (!empresaId) return;
+        try {
+            const res = await fetch(`http://localhost:8000/api/v1/empresas/${empresaId}/sedes`);
+            if (res.ok) {
+                const data = await res.json();
+                setSedesDisponibles(data);
+                if (data.length > 0) {
+                    setFormulario(f => ({ ...f, empresa_id: empresaId, sede_id: data[0].id }));
+                } else {
+                    setFormulario(f => ({ ...f, empresa_id: empresaId, sede_id: 'MANUAL' }));
+                }
+            }
+        } catch (err) {
+            console.error("Error al recuperar las sedes de la empresa:", err);
+        }
+    };
+
     useEffect(() => {
         obtenerEmpleados();
+        obtenerSociedades(); // 👈 Llama la siembra de sociedades al iniciar
     }, []);
 
     // 2. Manejar la acción de subir el documento a la IA
@@ -82,6 +121,9 @@ function App() {
     // 4. Desplegar el modal inyectando lo que capturó previamente la IA
     const abrirModalEdicion = (emp) => {
         setEmpleadoSeleccionado(emp);
+
+        const sociedadInicialId = sociedades[0]?.id || '';
+
         setFormulario({
             nombres: emp.nombres || '',
             apellidos: emp.apellidos || '',
@@ -92,11 +134,11 @@ function App() {
             direccion_residencia: emp.direccion_residencia || '',
             telefono: emp.telefono || '',
 
-            // 🚨 CONFIGURACIÓN POR DEFECTO PARA EL NUEVO FLUJO 🚨
-            empresa_id: empresas[0]?.id || '', // Sugiere la primera empresa cargada
-            sede_id: '',                       // Nace limpio para que se dispare la carga
-            aplica_sede: true,                 // Por defecto, asumimos que sí trabaja en una sede
-            sede_manual: '',                   // Vacío por si acaso
+            // 🛠️ CONFIGURACIÓN MULTIEMPRESA CONTROLADA 🛠️
+            empresa_id: sociedadInicialId,
+            sede_id: '',
+            aplica_sede: true,
+            sede_manual: '',
 
             tipo_contrato: 'INDEFINIDO_ESTANDAR',
             cargo: '',
@@ -105,8 +147,8 @@ function App() {
         });
 
         // Disparar inmediatamente la carga de sedes de la primera empresa sugerida
-        if (empresas.length > 0) {
-            cargarSedesDeEmpresa(empresas[0].id);
+        if (sociedades.length > 0) {
+            cargarSedesDeEmpresa(sociedadInicialId);
         }
     };
 
@@ -131,7 +173,6 @@ function App() {
                 body: JSON.stringify({
                     ...formulario,
                     sede_id: parseInt(sedeIdFinal), // 👈 Obligatorio enviarlo como Entero
-                    // Enviamos explícitamente el texto manual por si se necesita
                     sede_manual: formulario.sede_id === "MANUAL" ? formulario.sede_manual : null
                 })
             });
@@ -279,15 +320,76 @@ function App() {
 
                             <h4 style={{ color: '#4a5568', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #edf2f7', paddingBottom: '5px' }}>2. Cláusulas y Datos de Contratación (Manual)</h4>
 
-                            {/* 🚨 ¡NUEVO ELEMENTO: SELECTOR DINÁMICO DE MINUTAS DE CONTRATO! 🚨 */}
+                            {/* 🏢 SELECTOR DE SOCIEDADES */}
+                            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Sociedad / Empresa Contratante:</label>
+                            <select
+                                value={formulario.empresa_id}
+                                onChange={e => {
+                                    const id = e.target.value;
+                                    setFormulario({ ...formulario, empresa_id: id });
+                                    cargarSedesDeEmpresa(id); // Despierta la actualización reactiva
+                                }}
+                                style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff' }}
+                            >
+                                <option value="">-- Selecciona una Sociedad --</option>
+                                {sociedades.map(soc => (
+                                    <option key={soc.id} value={soc.id}>{soc.razon_social} (NIT: {soc.nit})</option>
+                                ))}
+                            </select>
+
+                            {/* 🔘 CONTROL DINÁMICO: CHECKBOX DE SEDE FÍSICA */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0' }}>
+                                <input
+                                    type="checkbox"
+                                    id="aplica_sede"
+                                    checked={formulario.aplica_sede}
+                                    onChange={e => setFormulario({ ...formulario, aplica_sede: e.target.checked })}
+                                />
+                                <label htmlFor="aplica_sede" style={{ fontSize: '13px', fontWeight: 'bold', color: '#4a5568', cursor: 'pointer' }}>
+                                    ¿El cargo requiere ejecución en una Sede Física?
+                                </label>
+                            </div>
+
+                            {/* 📍 CONTROL CONDICIONAL: SELECTOR DE SEDES */}
+                            {formulario.aplica_sede && (
+                                <>
+                                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Sede de Trabajo / Dirección:</label>
+                                    <select
+                                        value={formulario.sede_id}
+                                        onChange={e => setFormulario({ ...formulario, sede_id: e.target.value })}
+                                        style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff' }}
+                                    >
+                                        {sedesDisponibles.map(sede => (
+                                            <option key={sede.id} value={sede.id}>{sede.nombre} — ({sede.direccion})</option>
+                                        ))}
+                                        <option value="MANUAL">✍️ OTRA (Digitar dirección manualmente)...</option>
+                                    </select>
+
+                                    {/* ⌨️ ENTRADA MANUAL COMPLEMENTARIA */}
+                                    {formulario.sede_id === "MANUAL" && (
+                                        <div style={{ backgroundColor: '#f7fafc', padding: '10px', borderRadius: '4px', border: '1px dashed #cbd5e0', marginBottom: '12px' }}>
+                                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#718096' }}>Nombre y ubicación de la Sede Nueva:</label>
+                                            <input
+                                                type="text"
+                                                value={formulario.sede_manual}
+                                                onChange={e => setFormulario({ ...formulario, sede_manual: e.target.value })}
+                                                required
+                                                placeholder="Ej: Oficina Satélite — Carrera 23 # 45-12, Manizales"
+                                                style={{ width: '100%', padding: '8px', marginTop: '6px', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff' }}
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Tipo de Contrato / Minuta:</label>
                             <select
                                 value={formulario.tipo_contrato}
                                 onChange={e => setFormulario({ ...formulario, tipo_contrato: e.target.value })}
                                 style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff', fontFamily: 'Arial, sans-serif' }}
                             >
-                                <option value="INDEFINIDO">Contrato Término Indefinido</option>
-                                <option value="INDEFINIDO_ABITA_MAREDU">Contrato Término Indefinido Abita/Maredu</option>
+                                <option value="INDEFINIDO_ESTANDAR">Contrato Término Indefinido (Oficina)</option>
+                                <option value="INDEFINIDO_ABITA">Contrato Término Indefinido (Turnos)</option>
                                 <option value="FIJO">Contrato Término Fijo</option>
                                 <option value="TIEMPO_PARCIAL">Contrato Tiempo Parcial</option>
                             </select>
