@@ -100,5 +100,5 @@ class Sede(Base):
     # Llave foránea para saber a qué empresa pertenece esta sede
     empresa_id = Column(Integer, ForeignKey("empresas.id", ondelete="CASCADE"))
     
-    # Relación inversa
+    # Relación inversa corregida con back_populates exacto 
     empresa = relationship("Empresa", back_populates="sedes")
