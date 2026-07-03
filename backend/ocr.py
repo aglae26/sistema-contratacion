@@ -293,25 +293,71 @@ def listar_sociedades(db: Session = Depends(get_db)):
     Retorna las sociedades y siembra datos iniciales de prueba SIN dirección en la empresa.
     """
     if db.query(models.Empresa).count() == 0:
-        # Empresa 1 (Quitamos el parámetro direccion=...)
-        sociedad1 = models.Empresa(nit="901.234.567-1", razon_social="Logística y Distribución S.A.S.")
+        # Abita Home Deco S.A.S
+        sociedad1 = models.Empresa(nit="901.756.017-8", razon_social="Abita Home Deco S.A.S.")
         db.add(sociedad1)
         db.flush()
-        
-        sede1_1 = models.Sede(nombre="Planta Principal Bogotá", direccion="Calle 13 #68-40", ciudad="Bogotá", departamento="Cundinamarca", empresa_id=sociedad1.id)
-        sede1_2 = models.Sede(nombre="Bodega Occidente Cali", direccion="Av. 4N #23-10", ciudad="Cali", departamento="Valle del Cauca", empresa_id=sociedad1.id)
-        db.add_all([sede1_1, sede1_2])
 
-        # Empresa 2 (Quitamos el parámetro direccion=...)
-        sociedad2 = models.Empresa(nit="800.987.654-2", razon_social="Servicios Integrales de Personal Ltda")
+        sede1_gen = models.Sede(nombre="Oficina Principal", direccion="Calle 64A No. 21-50 OF 1601 Portal Del Cable", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad1.id)
+        db.add(sede1_gen)
+
+        # Mizzu Inmobiliaria S.A.S
+        sociedad2 = models.Empresa(nit="901.884.591-2", razon_social="Mizzú Inmobiliaria S.A.S.")
         db.add(sociedad2)
         db.flush()
-        
-        sede2_1 = models.Sede(nombre="Oficina Norte Manizales", direccion="Calle 64A N° 21-50 of. 1601", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad2.id)
-        db.add(sede2_1)
-        
-        db.commit()
-        
+
+        sede2_gen = models.Sede(nombre="Oficina Principal", direccion="Calle 64A No. 21-50 OF 1601 Portal Del Cable", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad2.id)
+        db.add(sede2_gen)
+
+        # Inversiones La Maria y CIA SAS
+        sociedad3 = models.Empresa(nit="810.004.405-6", razon_social="Inversiones La María y CIA S.A.S.")
+        db.add(sociedad3)
+        db.flush()
+        #Sede
+        sede3_1 = models.Sede(nombre="Finca La Alpujarra", direccion="Vereda La Perla", ciudad="Anserma", departamento="Caldas", empresa_id=sociedad3.id)
+        sede3_2 = models.Sede(nombre="Finca La Argentina", direccion="Km 41 vía Medellín - Vereda Colombia", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad3.id)
+        sede3_3 = models.Sede(nombre="Lechería Madrid", direccion="Vereda La Perla", ciudad="Anserma", departamento="Caldas", empresa_id=sociedad3.id)
+        sede3_4 = models.Sede(nombre="Finca Zaragoza", direccion="Vereda La Perla", ciudad="Anserma", departamento="Caldas", empresa_id=sociedad3.id)
+        sede3_5 = models.Sede(nombre="Finca Ceba", direccion="Vereda La Perla", ciudad="Anserma", departamento="Caldas", empresa_id=sociedad3.id)
+        sede3_gen = models.Sede(nombre="Oficina Principal", direccion="Calle 64A No. 21-50 OF 1601 Portal Del Cable", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad3.id)
+        db.add_all([sede3_1, sede3_2, sede3_3, sede3_4, sede3_5, sede3_gen])
+
+        # Sucesores Agricola SAS
+        sociedad4 = models.Empresa(nit="901.910.259-3", razon_social="Sucesores Agrícola S.A.S.")
+        db.add(sociedad4)
+        db.flush()
+        # Sede
+        sede4_1 = models.Sede(nombre="Hacienda Buenos Aires", direccion="Tres Puertas", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad4.id)
+        sede4_2 = models.Sede(nombre="Lechería Buenos Aires", direccion="Tres Puertas", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad4.id)
+        sede4_3 = models.Sede(nombre="Finca Colinas", direccion="Tres Puertas", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad4.id)
+        sede4_4 = models.Sede(nombre="Finca La Coca", direccion="Tres Puertas", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad4.id)
+        sede4_gen = models.Sede(nombre="Oficina Principal", direccion="Calle 64A No. 21-50 OF 1601 Portal Del Cable", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad4.id)
+        db.add_all([sede4_1, sede4_2, sede4_3, sede4_4, sede4_gen]) 
+
+        # Sucesores de Liborio INC
+        sociedad5 = models.Empresa(nit="901.845.505-2", razon_social="Sucesores de Liborio INC")
+        db.add(sociedad5)
+        db.flush()
+
+        sede5_gen = models.Sede(nombre="Oficina Principal", direccion="Calle 64A No. 21-50 OF 1601 Portal Del Cable", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad5.id)
+        db.add(sede5_gen)
+
+        # Maredu SAS
+        sociedad6 = models.Empresa(nit="900.997.890-1", razon_social="Maredu S.A.S.")
+        db.add(sociedad6)
+        db.flush()
+        # Sede
+        sede6_1 = models.Sede(nombre="OFFCORSS", direccion="No Aplica", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad6.id)
+        sede6_2 = models.Sede(nombre="OFFCORSS", direccion="No Aplica", ciudad="Santa Rosa De Cabal", departamento="Risaralda", empresa_id=sociedad6.id)
+        sede6_3 = models.Sede(nombre="OFFCORSS", direccion="No Aplica", ciudad="Dosquebradas", departamento="Risaralda", empresa_id=sociedad6.id)
+        sede6_4 = models.Sede(nombre="OFFCORSS", direccion="No Aplica", ciudad="Pereira", departamento="Risaralda", empresa_id=sociedad6.id)
+        sede6_5 = models.Sede(nombre="OFFCORSS", direccion="No Aplica", ciudad="Armenia", departamento="Quindio", empresa_id=sociedad6.id)
+        sede6_6 = models.Sede(nombre="OFFCORSS", direccion="No Aplica", ciudad="Tuluá", departamento="Valle Del Cauca", empresa_id=sociedad6.id)
+        sede6_7 = models.Sede(nombre="OFFCORSS", direccion="No Aplica", ciudad="Apartadó", departamento="Antioquia", empresa_id=sociedad6.id)
+        sede6_gen = models.Sede(nombre="Oficina Principal", direccion="Calle 64A No. 21-50 OF 1601 Portal Del Cable", ciudad="Manizales", departamento="Caldas", empresa_id=sociedad6.id)
+        db.add_all([sede6_1, sede6_2, sede6_3, sede6_4, sede6_5, sede6_6, sede6_7, sede6_gen])
+
+        db.commit() 
     return db.query(models.Empresa).all()
 
 
