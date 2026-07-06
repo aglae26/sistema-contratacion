@@ -55,7 +55,8 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
             '  "tipo_documento": "Tipo de documento",\n'
             '  "numero_documento": "Solo los números sin puntos ni comas\nEn caso de Permiso de Protección Temporal o Permiso de Protección Especial no tomas en cuenta el numero de la nacionalidad, solo el numero del documento.",\n'
             '  "fecha_nacimiento": "Formato AAAA-MM-DD",\n'
-            '  "lugar_expedicion": "Municipio y departamento de expedición"\n'
+            '  "lugar_expedicion": "Municipio y departamento de expedición",\n'
+            '  "fecha_expedicion": "Fecha de expedición del documento en formato AAAA-MM-DD. Si no es visible, devuelve null"\n'
             "}\n"
             "No incluyas introducciones, comentarios, ni bloques de código de markdown (como ```json), solo el JSON plano."
         )
@@ -116,6 +117,7 @@ async def procesar_cedula(file: UploadFile = File(...), db: Session = Depends(ge
             numero_documento=datos_ia.get("numero_documento"),
             fecha_nacimiento=datos_ia.get("fecha_nacimiento"),
             lugar_expedicion=datos_ia.get("lugar_expedicion"),
+            fecha_expedicion=datos_ia.get("fecha_expedicion"),
             telefono=None,
             direccion_residencia=None
         )
@@ -146,6 +148,7 @@ class EmpleadoContratoUpdate(BaseModel):
     numero_documento: str
     fecha_nacimiento: Optional[date] = None
     lugar_expedicion: Optional[str] = None
+    fecha_expedicion: Optional[date] = None
     direccion_residencia: Optional[str] = None
     telefono: Optional[str] = None
     
@@ -153,10 +156,11 @@ class EmpleadoContratoUpdate(BaseModel):
     empresa_id: int          # ID de la sociedad seleccionada
     sede_id: int             # 👈 ID de la sede (>0: DB, 0: Manual, -1: No aplica)
     sede_manual: Optional[str] = None  # 👈 NUEVO: Captura el texto si digitan a mano
-    tipo_contrato: str       # 'INDEFINIDO_ESTANDAR', 'INDEFINIDO_ABITA', 'FIJO', 'TIEMPO_PARCIAL'
+    tipo_contrato: str       # 'INDEFINIDO_ESTANDAR', 'INDEFINIDO_ABITA', 'FIJO', 'TIEMPO_PARCIAL', 'PRESTACION_DESCUENTO', 'PRESTACION_AUTONOMO'
     cargo: str
     salario: str
     fecha_ingreso: date
+    funciones_especificas: Optional[str] = None
 
 
 def numero_a_letras(numero):
@@ -237,12 +241,14 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
         
     # Nota: Si datos.sede_id == -1, se salta el bloque y conserva los valores "No aplica"
 
-    # D. Diccionario de enrutamiento para tus 4 plantillas de Google Drive
+    # D. Diccionario de enrutamiento para tus 6 plantillas de Google Drive
     PLANTILLAS_CONTRATOS = {
         "INDEFINIDO_ESTANDAR": "1J_n_mpmOWWEeUNKF2vcuo38WFq1xSJvt22KiXJV_lEA",
         "INDEFINIDO_ABITA": "1O-Sga4_5qMINa9Vk_95pZdr0jOOkgaZsTd6AxJrIXrg",
         "FIJO": "1E6A9h1O-d45OlFrGB064RbXM6Wu_I627cMlZXoAbjj8", 
-        "TIEMPO_PARCIAL": "1JCH8mYlA1ZIo_QwFXwyHMTV77TOd5RlxAc77Xe23E-M"
+        "TIEMPO_PARCIAL": "1JCH8mYlA1ZIo_QwFXwyHMTV77TOd5RlxAc77Xe23E-M",
+        "PRESTACION_DESCUENTO": "1XdeOI_z25cfQARd3gFWmYiZ9bNd5-mTuUkB7TPG6CXI",
+        "PRESTACION_AUTONOMO": "1RhpPW6YVRiVjx9D2sTM3CEjRYRR1tLsPFNVIgKhuy48"
     }
     
     id_plantilla_seleccionada = PLANTILLAS_CONTRATOS.get(
@@ -257,6 +263,7 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
     db_empleado.numero_documento = datos.numero_documento
     db_empleado.fecha_nacimiento = datos.fecha_nacimiento
     db_empleado.lugar_expedicion = datos.lugar_expedicion
+    db_empleado.fecha_expedicion = datos.fecha_expedicion
     db_empleado.direccion_residencia = datos.direccion_residencia
     db_empleado.telefono = datos.telefono
     db_empleado.empresa_id = datos.empresa_id
@@ -277,6 +284,7 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
         fecha_inicio_labores=datos.fecha_ingreso,             
         salario_numeros=float(datos.salario),                 
         salario_letras=f"{salario_en_letras} PESOS M/CTE",            
+        funciones_especificas=datos.funciones_especificas,
         sede_trabajo=nombre_sede,                             
         ciudad=ciudad_sede,                                   
         departamento=depto_sede,                               
@@ -305,11 +313,13 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
                 "tipo_documento": db_empleado.tipo_documento,
                 "numero_documento": db_empleado.numero_documento,
                 "fecha_nacimiento": str(db_empleado.fecha_nacimiento) if db_empleado.fecha_nacimiento else "",
+                "fecha_expedicion": str(db_empleado.fecha_expedicion) if db_empleado.fecha_expedicion else "",
                 "direccion": db_empleado.direccion_residencia or "",
                 "telefono": db_empleado.telefono or "",
                 "cargo": nuevo_contrato.cargo_desempenar,
                 "salario": str(nuevo_contrato.salario_numeros),
                 "salario_letras": nuevo_contrato.salario_letras,
+                "funciones_especificas": nuevo_contrato.funciones_especificas or "",
                 "fecha_ingreso": str(nuevo_contrato.fecha_inicio_labores),
                 "fecha_finalizacion": str(nuevo_contrato.fecha_finalizacion_labores) if nuevo_contrato.fecha_finalizacion_labores else "No aplica",
                 "dia_firma": nuevo_contrato.dia_firma,

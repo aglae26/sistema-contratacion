@@ -122,7 +122,6 @@ function App() {
     const abrirModalEdicion = (emp) => {
         setEmpleadoSeleccionado(emp);
 
-        // ✅ CORRECCIÓN DEFINITIVA: Usa la empresa real del empleado, de lo contrario la primera de la lista
         const empresaIdActual = emp.empresa_id || sociedades[0]?.id || '';
 
         setFormulario({
@@ -393,6 +392,8 @@ function App() {
                                 <option value="INDEFINIDO_ABITA">Contrato Término Indefinido (Turnos)</option>
                                 <option value="FIJO">Contrato Término Fijo</option>
                                 <option value="TIEMPO_PARCIAL">Contrato Tiempo Parcial</option>
+                                <option value="PRESTACION_DESCUENTO">Prestación de Servicios (Con Descuento)</option>
+                                <option value="PRESTACION_AUTONOMO">Prestación de Servicios (Autónomo)</option>
                             </select>
 
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Cargo Estipulado:</label>

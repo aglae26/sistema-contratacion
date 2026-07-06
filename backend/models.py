@@ -34,6 +34,7 @@ class Empleado(Base):
     numero_documento = Column(String(20), unique=True, nullable=False, index=True)
     fecha_nacimiento = Column(Date, nullable=True)
     lugar_expedicion = Column(String(100), nullable=True)
+    fecha_expedicion = Column(Date, nullable=True)
     direccion_residencia = Column(String(200), nullable=True) 
     telefono = Column(String(20), nullable=True)
 
