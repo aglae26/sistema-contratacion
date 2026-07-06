@@ -18,14 +18,23 @@ function App() {
 
     // Campos del Formulario Unificado (Datos IA + Datos Manuales)
     const [formulario, setFormulario] = useState({
-        nombres: '', apellidos: '', tipo_documento: '', numero_documento: '',
-        fecha_nacimiento: '', lugar_expedicion: '', direccion_residencia: '', telefono: '',
+        nombres: '',
+        apellidos: '',
+        tipo_documento: '',
+        numero_documento: '',
+        fecha_nacimiento: '',
+        lugar_expedicion: '',
+        fecha_expedicion: '',
+        direccion_residencia: '',
+        telefono: '',
         empresa_id: '',
         sede_id: '',
-        aplica_sede: true,          // Controla si el checkbox está marcado
-        sede_manual: '',            // Campo de texto que aparece condicionalmente
+        aplica_sede: true,
+        sede_manual: '',
         tipo_contrato: 'INDEFINIDO_ESTANDAR',
-        cargo: '', salario: '', fecha_ingreso: ''
+        cargo: '',
+        salario: '',
+        fecha_ingreso: ''
     });
 
     const empleadosPorPagina = 5;
@@ -309,6 +318,17 @@ function App() {
                                 <div style={{ flex: 1 }}>
                                     <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Número:</label>
                                     <input type="text" value={formulario.numero_documento} onChange={e => setFormulario({ ...formulario, numero_documento: e.target.value })} required style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Lugar de Expedición:</label>
+                                    <input type="text" value={formulario.lugar_expedicion} onChange={e => setFormulario({ ...formulario, lugar_expedicion: e.target.value })} style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Fecha de Expedición:</label>
+                                    <input type="date" value={formulario.fecha_expedicion} onChange={e => setFormulario({ ...formulario, fecha_expedicion: e.target.value })} style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
                                 </div>
                             </div>
 
