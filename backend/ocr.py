@@ -20,6 +20,7 @@ API_KEY_SISTEMA = os.getenv("GEMINI_API_KEY")
 URL_PUENTE_OCR = os.getenv("URL_PUENTE_OCR")
 URL_PUENTE_PLANTILLAS = os.getenv("URL_PUENTE_PLANTILLAS")
 
+
 if not API_KEY_SISTEMA:
     raise RuntimeError(
         "CRÍTICO: La variable de entorno 'GEMINI_API_KEY' no está configurada en el contenedor. "
@@ -158,6 +159,45 @@ class EmpleadoContratoUpdate(BaseModel):
     fecha_ingreso: date
 
 
+def numero_a_letras(numero):
+    unidades = ["", "UN", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"]
+    decenas = ["", "DIEZ", "VEINTE", "TREINTA", "CUARENTA", "CINCUENTA", "SESENTA", "SETENTA", "OCHENTA", "NOVENTA"]
+    especiales = {11: "ONCE", 12: "DOCE", 13: "TRECE", 14: "CATORCE", 15: "QUINCE", 16: "DIECISEIS", 17: "DIECISIETE", 18: "DIECIOCHO", 19: "DIECINUEVE",
+                  21: "VEINTIUN", 22: "VEINTIDOS", 23: "VEINTITRES", 24: "VEINTICUATRO", 25: "VEINTICINCO", 26: "VEINTISEIS", 27: "VEINTISIETE", 28: "VEINTIOCHO", 29: "VEINTINUEVE"}
+    centenas = ["", "CIENTO", "DOSCIENTOS", "TRESCIENTOS", "CUATROCIENTOS", "QUINIENTOS", "SEISCIENTOS", "SETECIENTOS", "OCHOCIENTOS", "NOVECIENTOS"]
+
+    def leer_decenas(n):
+        if n < 10: return unidades[n]
+        if n < 30 and n in especiales: return especiales[n]
+        if n < 30: return decenas[n // 10] + (" Y " + unidades[n % 10] if n % 10 != 0 else "")
+        return decenas[n // 10] + (" Y " + unidades[n % 10] if n % 10 != 0 else "")
+
+    def leer_centenas(n):
+        if n == 100: return "CIEN"
+        return (centenas[n // 100] + " " + leer_decenas(n % 100)).strip()
+
+    def leer_miles(n):
+        if n < 1000: return leer_centenas(n)
+        if n == 1000: return "MIL"
+        miles = n // 1000
+        resto = n % 1000
+        str_miles = "MIL" if miles == 1 else leer_centenas(miles) + " MIL"
+        return (str_miles + " " + leer_centenas(resto)).strip()
+
+    def leer_millones(n):
+        if n < 1000000: return leer_miles(n)
+        millones = n // 1000000
+        resto = n % 1000000
+        str_millones = "UN MILLON" if millones == 1 else leer_miles(millones) + " MILLONES"
+        return (str_millones + " " + leer_miles(resto)).strip()
+        
+    try:
+        numero = int(float(numero))
+        if numero == 0: return "CERO"
+        return leer_millones(numero)
+    except:
+        return str(numero)
+
 # =========================================================================
 # 🎯 3. ENDPOINT: APROBACIÓN Y AUTOMATIZACIÓN DE CONTRATOS
 # =========================================================================
@@ -219,11 +259,14 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
     db_empleado.lugar_expedicion = datos.lugar_expedicion
     db_empleado.direccion_residencia = datos.direccion_residencia
     db_empleado.telefono = datos.telefono
+    db_empleado.empresa_id = datos.empresa_id
     db_empleado.estado = models.EstadoEmpleado.APROBADO
     
     # F. Metadatos cronológicos para las cláusulas de cierre
     hoy = datetime.now()
     meses_es = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+    
+    salario_en_letras = numero_a_letras(datos.salario)
 
     # G. Registrar el contrato en PostgreSQL
     nuevo_contrato = models.Contrato(
@@ -233,7 +276,7 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
         cargo_desempenar=datos.cargo,                         
         fecha_inicio_labores=datos.fecha_ingreso,             
         salario_numeros=float(datos.salario),                 
-        salario_letras="VALOR CALCULADO EN LETRAS",            
+        salario_letras=f"{salario_en_letras} PESOS M/CTE",            
         sede_trabajo=nombre_sede,                             
         ciudad=ciudad_sede,                                   
         departamento=depto_sede,                               
@@ -266,7 +309,12 @@ async def aprobar_y_generar_contrato(empleado_id: int, datos: EmpleadoContratoUp
                 "telefono": db_empleado.telefono or "",
                 "cargo": nuevo_contrato.cargo_desempenar,
                 "salario": str(nuevo_contrato.salario_numeros),
-                "fecha_ingreso": str(nuevo_contrato.fecha_inicio_labores)
+                "salario_letras": nuevo_contrato.salario_letras,
+                "fecha_ingreso": str(nuevo_contrato.fecha_inicio_labores),
+                "fecha_finalizacion": str(nuevo_contrato.fecha_finalizacion_labores) if nuevo_contrato.fecha_finalizacion_labores else "No aplica",
+                "dia_firma": nuevo_contrato.dia_firma,
+                "mes_firma": nuevo_contrato.mes_firma,
+                "anio_firma": nuevo_contrato.anio_firma
             }
             
             res = requests.post(URL_PUENTE_PLANTILLAS, json=payload, timeout=25)
@@ -363,7 +411,7 @@ def listar_sociedades(db: Session = Depends(get_db)):
         
         except Exception as e:
             db.rollback() # 👈 Evita trancar la base de datos si ocurre un choque
-            print(f"⚠️ Nota de siembra: {str(e)}")
+            print(f"⚠️ Error controlado en siembra: {str(e)}")
 
     return db.query(models.Empresa).all()
 
