@@ -12,7 +12,7 @@ function App() {
     const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
     const [cargandoContrato, setCargandoContrato] = useState(false);
 
-    // 🚨 NUEVOS ESTADOS COMPLEMENTARIOS PARA LA ASOCIACIÓN MULTIEMPRESA 🚨
+    // 🚨 ESTADOS COMPLEMENTARIOS PARA LA ASOCIACIÓN MULTIEMPRESA 🚨
     const [sociedades, setSociedades] = useState([]); // Almacena las empresas de PostgreSQL
     const [sedesDisponibles, setSedesDisponibles] = useState([]); // Almacena las sedes filtradas
 
@@ -43,7 +43,7 @@ function App() {
         }
     };
 
-    // 🏢 NUEVO: Cargar catálogo de sociedades desde el Backend
+    // 🏢 Cargar catálogo de sociedades desde el Backend
     const obtenerSociedades = async () => {
         try {
             const res = await fetch('http://localhost:8000/api/v1/sociedades');
@@ -56,7 +56,7 @@ function App() {
         }
     };
 
-    // 📍 NUEVO: Cargar sedes encadenadas de forma reactiva según la empresa elegida
+    // 📍 Cargar sedes encadenadas de forma reactiva según la empresa elegida
     const cargarSedesDeEmpresa = async (empresaId) => {
         if (!empresaId) return;
         try {
@@ -77,7 +77,7 @@ function App() {
 
     useEffect(() => {
         obtenerEmpleados();
-        obtenerSociedades(); // 👈 Llama la siembra de sociedades al iniciar
+        obtenerSociedades();
     }, []);
 
     // 2. Manejar la acción de subir el documento a la IA
@@ -118,11 +118,12 @@ function App() {
     const empleadosPaginados = empleados.slice(indicePrimero, indiceUltimo);
     const totalPaginas = Math.ceil(empleados.length / empleadosPorPagina);
 
-    // 4. Desplegar el modal inyectando lo que capturó previamente la IA
+    // 4. Desplegar el modal inyectando lo que capturó previamente la IA de manera dinámica
     const abrirModalEdicion = (emp) => {
         setEmpleadoSeleccionado(emp);
 
-        const sociedadInicialId = sociedades[0]?.id || '';
+        // ✅ CORRECCIÓN DEFINITIVA: Usa la empresa real del empleado, de lo contrario la primera de la lista
+        const empresaIdActual = emp.empresa_id || sociedades[0]?.id || '';
 
         setFormulario({
             nombres: emp.nombres || '',
@@ -134,21 +135,21 @@ function App() {
             direccion_residencia: emp.direccion_residencia || '',
             telefono: emp.telefono || '',
 
-            // 🛠️ CONFIGURACIÓN MULTIEMPRESA CONTROLADA 🛠️
-            empresa_id: sociedadInicialId,
-            sede_id: '',
-            aplica_sede: true,
-            sede_manual: '',
+            // 🛠️ Mapeo Multiempresa Dinámico Corregido 🛠️
+            empresa_id: empresaIdActual,
+            sede_id: emp.sede_id || '',
+            aplica_sede: emp.sede_id !== -1,
+            sede_manual: emp.sede_manual || '',
 
-            tipo_contrato: 'INDEFINIDO_ESTANDAR',
-            cargo: '',
-            salario: '',
-            fecha_ingreso: new Date().toISOString().split('T')[0]
+            tipo_contrato: emp.tipo_contrato || 'INDEFINIDO_ESTANDAR',
+            cargo: emp.cargo || '',
+            salario: emp.salario || '',
+            fecha_ingreso: emp.fecha_ingreso || new Date().toISOString().split('T')[0]
         });
 
-        // Disparar inmediatamente la carga de sedes de la primera empresa sugerida
-        if (sociedades.length > 0) {
-            cargarSedesDeEmpresa(sociedadInicialId);
+        // Carga dinámicamente las sedes de la empresa asociada al abrir el modal
+        if (empresaIdActual) {
+            cargarSedesDeEmpresa(empresaIdActual);
         }
     };
 
@@ -157,13 +158,12 @@ function App() {
         e.preventDefault();
         setCargandoContrato(true);
 
-        // 🧠 Conversión inteligente alineada con ocr.py
         let sedeIdFinal = formulario.sede_id;
 
         if (!formulario.aplica_sede) {
-            sedeIdFinal = -1; // 👈 Le dice a Python: "No aplica"
+            sedeIdFinal = -1; // Le dice a Python: "No aplica"
         } else if (formulario.sede_id === "MANUAL") {
-            sedeIdFinal = 0;  // 👈 Le dice a Python: "Usa el texto de 'sede_manual'"
+            sedeIdFinal = 0;  // Le dice a Python: "Usa el texto de 'sede_manual'"
         }
 
         try {
@@ -172,7 +172,8 @@ function App() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formulario,
-                    sede_id: parseInt(sedeIdFinal), // 👈 Obligatorio enviarlo como Entero
+                    empresa_id: parseInt(formulario.empresa_id), // Enviado explícitamente como entero
+                    sede_id: parseInt(sedeIdFinal),              // Enviado explícitamente como entero
                     sede_manual: formulario.sede_id === "MANUAL" ? formulario.sede_manual : null
                 })
             });
@@ -181,7 +182,7 @@ function App() {
             if (res.ok && resultado.status === 'success') {
                 alert("¡Candidato aprobado! Contrato inyectado y organizado en Google Drive.");
                 if (resultado.contrato_url) {
-                    window.open(resultado.contrato_url, '_blank'); // Abre el Google Doc generado de inmediato
+                    window.open(resultado.contrato_url, '_blank'); // Abre el Google Doc de inmediato
                 }
                 setEmpleadoSeleccionado(null); // Cerrar ventana flotante
                 obtenerEmpleados(); // Actualizar estados de la tabla
@@ -229,7 +230,7 @@ function App() {
                 )}
             </section>
 
-            {/* SECCIÓN 2: PANEL DE CONTROL Y CONTROL DE ESTADOS */}
+            {/* SECCIÓN 2: CONSOLE DE GH */}
             <section>
                 <h3 style={{ marginBottom: '15px' }}>📋 Consola de Gestión Humana</h3>
 
@@ -274,7 +275,7 @@ function App() {
                     </tbody>
                 </table>
 
-                {/* PAGINADOR DINÁMICO */}
+                {/* PAGINADOR */}
                 <div style={{ marginTop: '20px', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
                     <button disabled={paginaActual === 1} onClick={() => setPaginaActual(p => p - 1)} style={{ padding: '5px 10px', cursor: 'pointer' }}>Anterior</button>
                     <span style={{ fontSize: '14px', color: '#4a5568' }}>Página <strong>{paginaActual}</strong> de {totalPaginas || 1}</span>
@@ -282,7 +283,7 @@ function App() {
                 </div>
             </section>
 
-            {/* SECCIÓN 3: FORMULARIO INTERACTIVO (VENTANA MODAL FLOTANTE) */}
+            {/* SECCIÓN 3: MODAL DE AUDITORÍA */}
             {empleadoSeleccionado && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -320,14 +321,14 @@ function App() {
 
                             <h4 style={{ color: '#4a5568', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #edf2f7', paddingBottom: '5px' }}>2. Cláusulas y Datos de Contratación (Manual)</h4>
 
-                            {/* 🏢 SELECTOR DE SOCIEDADES */}
+                            {/* 🏢 SELECTOR DE SOCIEDADES DINÁMICO */}
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Sociedad / Empresa Contratante:</label>
                             <select
                                 value={formulario.empresa_id}
                                 onChange={e => {
                                     const id = e.target.value;
                                     setFormulario({ ...formulario, empresa_id: id });
-                                    cargarSedesDeEmpresa(id); // Despierta la actualización reactiva
+                                    cargarSedesDeEmpresa(id); // Trae las sedes correctas al cambiar el combo
                                 }}
                                 style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff' }}
                             >
@@ -337,7 +338,7 @@ function App() {
                                 ))}
                             </select>
 
-                            {/* 🔘 CONTROL DINÁMICO: CHECKBOX DE SEDE FÍSICA */}
+                            {/* CHECKBOX DE SEDE FÍSICA */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0' }}>
                                 <input
                                     type="checkbox"
@@ -350,7 +351,7 @@ function App() {
                                 </label>
                             </div>
 
-                            {/* 📍 CONTROL CONDICIONAL: SELECTOR DE SEDES */}
+                            {/* SELECTOR DE SEDES ENCADENADO */}
                             {formulario.aplica_sede && (
                                 <>
                                     <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Sede de Trabajo / Dirección:</label>
@@ -365,7 +366,7 @@ function App() {
                                         <option value="MANUAL">✍️ OTRA (Digitar dirección manualmente)...</option>
                                     </select>
 
-                                    {/* ⌨️ ENTRADA MANUAL COMPLEMENTARIA */}
+                                    {/* ENTRADA MANUAL COMPLEMENTARIA */}
                                     {formulario.sede_id === "MANUAL" && (
                                         <div style={{ backgroundColor: '#f7fafc', padding: '10px', borderRadius: '4px', border: '1px dashed #cbd5e0', marginBottom: '12px' }}>
                                             <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#718096' }}>Nombre y ubicación de la Sede Nueva:</label>
@@ -386,7 +387,7 @@ function App() {
                             <select
                                 value={formulario.tipo_contrato}
                                 onChange={e => setFormulario({ ...formulario, tipo_contrato: e.target.value })}
-                                style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff', fontFamily: 'Arial, sans-serif' }}
+                                style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff' }}
                             >
                                 <option value="INDEFINIDO_ESTANDAR">Contrato Término Indefinido (Oficina)</option>
                                 <option value="INDEFINIDO_ABITA">Contrato Término Indefinido (Turnos)</option>
@@ -398,10 +399,10 @@ function App() {
                             <input type="text" value={formulario.cargo} onChange={e => setFormulario({ ...formulario, cargo: e.target.value })} required placeholder="Ej: Ingeniero de Datos Senior" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
 
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Salario Integral Mensual ($):</label>
-                            <input type="text" value={formulario.salario} onChange={e => setFormulario({ ...formulario, salario: e.target.value })} required placeholder="Ej: 4.800.000" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                            <input type="text" value={formulario.salario} onChange={e => setFormulario({ ...formulario, salario: e.target.value })} required placeholder="Ej: 4800000" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
 
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Fecha Oficial de Ingreso:</label>
-                            <input type="date" value={formulario.fecha_ingreso} onChange={e => setFormulario({ ...formulario, fecha_ingreso: e.target.value })} required style={{ width: '100%', padding: '8px', margin: '6px 0 20px 0', borderRadius: '4px', border: '1px solid #cbd5e0', fontFamily: 'Arial, sans-serif' }} />
+                            <input type="date" value={formulario.fecha_ingreso} onChange={e => setFormulario({ ...formulario, fecha_ingreso: e.target.value })} required style={{ width: '100%', padding: '8px', margin: '6px 0 20px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
 
                             {/* BOTONERA ACCIONES DE CIERRE */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
