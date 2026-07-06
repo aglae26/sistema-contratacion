@@ -1,0 +1,113 @@
+﻿{{LOGO_EMPRESA}}
+	
+
+CONTRATO INDIVIDUAL DE TRABAJO A TÉRMINO INDEFINIDO
+
+
+Nombre del empleador
+	{{empresa_razon_social}}
+	NIT
+	{{empresa_nit}}
+	Nombre del empleado
+	{{nombres}} {{apellidos}}
+	Tipo de documento
+	{{tipo_documento}}
+	Documento de identidad
+	{{numero_documento}}
+	Fecha de nacimiento
+	{{fecha_nacimiento}}
+	Dirección de residencia
+	{{direccion}}
+	Teléfono
+	{{telefono}}
+	Cargo a desempeñar
+	{{cargo}}
+	Salario
+	$ {{salario}} COP
+	Inicio de labores
+	{{fecha_ingreso}}
+	Finalización de labores
+	{{fecha_finalizacion}}
+	Forma de pago
+	QUINCENAL
+	
+
+PRIMERA. Objeto: El Empleador contrata los servicios personales del trabajador y éste se obliga a: a) Poner a disposición del empleador toda su capacidad normal de trabajo en el desempeño de las funciones propias del oficio y/o cargo mencionado y en las labores anexas y complementarias del mismo, de conformidad con las órdenes e instrucciones que le imparta el empleador directamente o a través de sus representantes; b) Prestar sus servicios de forma exclusiva al empleador, es decir, se obliga a no prestar directa ni indirectamente servicios laborales a otros empleadores ni a trabajar por cuenta propia en el mismo oficio durante la vigencia de este contrato; c) Guardar absoluta reserva sobre los hechos, documentos físicos y/o electrónicos, informaciones y en general, sobre todos los asuntos y materias que lleguen a su conocimiento por causa o con ocasión de su contrato de trabajo; d) A no utilizar el buen nombre del Empleador para realizar labores que le reporten lucro o beneficio personal; e) A presentar informes periódicos y/o ocasionales de la gestión de sus labores al Empleador cuando ésta los requiera; f) A proteger fielmente los intereses del Empleador; g) A dedicar la totalidad de la jornada laboral a cumplir rigurosamente sus funciones; h) A asistir puntualmente a las reuniones o diligencias a las que sea citado por el Empleador; i) A observar absoluto respeto, amabilidad y colaboración con el Empleador o quién lo represente, con los compañeros de trabajo, con los clientes o terceros; j) A cumplir leal y disciplinadamente las funciones encomendadas por el EMPLEADOR; k) A avisar por escrito al EMPLEADOR, cualquier cambio de dirección y teléfono de residencia, dentro de los cinco (5) días siguientes al respectivo cambio. l) Las demás consagradas en los artículos 56, 58 y 60 y concordantes del Código Sustantivo del Trabajo, el Reglamento Interno de Trabajo, el Código de Ética y el Reglamento de Higiene y Seguridad Industrial.
+
+
+Parágrafo: La sede de trabajo para el Trabajador será {{sede_trabajo}} o en cualquier otro lugar que se le indique de acuerdo a las condiciones y Reglamentos de la Empresa. El Trabajador acepta el traslado de cargo, área o sede de trabajo que a discrecional criterio le señale El Empleador, sin que ello constituya variación de las condiciones laborales.
+
+
+SEGUNDA. Funciones: Para el cumplimiento del presente contrato, el trabajador ejecutará las funciones establecidas en el Manual de Funciones del cargo contratado, las demás que sean inherentes a su naturaleza y aquellas que sean asignadas directamente por el empleador o sus representantes.
+
+
+TERCERA. Elementos de trabajo: Corresponde al empleador suministrar los elementos necesarios para el normal desempeño de las funciones del cargo contratado y así mismo corresponde al empleado velar por el cuidado y adecuada utilización de sus implementos de trabajo en el desarrollo propio de las labores encomendadas.
+
+
+CUARTA. Salario: El empleador cancelará al trabajador un salario mensual de {{salario_letras}} ($ {{salario}} COP). Dentro de este pago se encuentra incluida la remuneración de los descansos dominicales y festivos de qué tratan los capítulos I y II del título VII del Código Sustantivo del Trabajo. Las Partes acuerdan que en los casos en que EL EMPLEADOR le reconozca y pague a EL TRABAJADOR beneficios o auxilios habituales u ocasionales diferentes al salario, por concepto de bonificaciones, incentivos, primas extralegales, de navidad, de vacaciones, alimentación, habitación o vivienda, transporte, vestuario, o por cualquier otro concepto, se considerarán tales beneficios como no salariales y por tanto no se tendrán en cuenta como factor salarial para la liquidación de acreencias laborales, ni para el pago de aportes parafiscales y seguridad social.
+
+
+Parágrafo: El empleador podrá establecer a libre disposición y según lo considere pertinente una bonificación de carácter extraordinario durante los meses de mayor productividad global del empleador, bonificación que será entregada por mera liberalidad y por lo tanto carece de incidencia salarial, prestacional o parafiscal conforme a lo consagrado en los artículos 14, 15 y 16 de la ley 50 de 1990 y el artículo 17 de la ley 344 de 1996.
+
+
+QUINTA. Jornada de trabajo y horario: El trabajador se obliga a laborar la jornada máxima legal, salvo estipulación expresa y escrita en contrario, cumpliendo con los turnos y horarios que señale el empleador, quien podrá cambiarlos o ajustarlos cuando lo estime conveniente. Por acuerdo expreso o tácito de las partes, podrán repartirse total o parcialmente las horas de la jornada ordinaria, con base en lo dispuesto en el artículo 164 del C.S.T. modificado por el artículo 23 de la Ley 50/90, teniendo en cuenta que los tiempos de descanso entre las secciones de la jornada no se computan dentro de la misma, según el art. 167 ibidem. De igual manera, las partes podrán acordar que se preste el servicio en los turnos de la jornada flexible contemplados en el art. 51 de la Ley 789 de 2002. El horario de trabajo se establece de la siguiente forma: De lunes a domingo en turnos de 10am a 8pm y de 11am a 9pm con un día compensatorio de descanso.
+
+
+SEXTA. Duración: El presente contrato tendrá una duración indefinida.
+
+
+SÉPTIMA. Periodo de prueba: No aplica.
+
+
+OCTAVA. Terminación unilateral: Son justas causas para dar por terminado unilateralmente el presente contrato por cualquiera de las partes, las enumeradas en el art. 62 del C.S.T., y además por parte del empleador, las faltas que para el efecto se comunique como graves en reglamentos, manuales, instructivos y demás documentos que contengan reglamentaciones, órdenes, instrucciones y prohibiciones de carácter general o particular, las cuales harán parte de este contrato. Expresamente se califican como faltas graves la violación y el incumplimiento a las obligaciones, funciones y prohibiciones contenidas en las cláusulas primera y segunda del presente contrato y las siguientes faltas que para el efecto se califican como graves: a) La violación por parte de EL EMPLEADO, aun por primera vez, de cualquiera de sus obligaciones legales, contractuales o reglamentarias; b) Cualquier delito o contravención en que incurra EL EMPLEADO en perjuicio de los intereses de EL EMPLEADOR o contra su vida, honra y bienes, o contra sus representantes o compañeros de trabajo, sin perjuicio de las acciones penales respectivas; c) La ejecución deficiente de las labores encomendadas a EL EMPLEADO a juicio de EL EMPLEADOR; d) La ejecución por parte de EL EMPLEADO de labores remuneradas al servicio de terceros; e) La revelación de cualquier secreto o acto reservado relacionado con los negocios de EL EMPLEADOR; f) Las desavenencias son sus compañeros de trabajo que lleguen a crear dificultades para la buena marcha de la empresa a juicio de EL EMPLEADOR; g) El hecho de que EL EMPLEADO llegue embriagado o bajo el efecto de estupefacientes o drogas enervantes, o ingiera bebidas embriagantes, estupefacientes o drogas enervantes en el sitio de trabajo, aun por la primera vez; h) La no asistencia a una sesión completa de la jornada de trabajo o más, sin excusa suficiente, a juicio de EL EMPLEADOR, aun por la primera vez; i) El hecho de que LA EMPLEADA abandone el sitio de trabajo son el permiso de sus superiores, aun por la primera vez.
+
+
+NOVENA. Trabajo extra y dominicales: El trabajo suplementario o en horas extras, así como el trabajo en domingo que correspondan a descanso, al igual que los nocturnos, será remunerado conforme al código laboral. Es de advertir que dicho trabajo debe ser autorizado u ordenado por el empleador para efectos de su reconocimiento. Cuando se presenten situaciones urgentes o inesperadas que requieran la necesidad de este trabajo suplementario, se deberá ejecutar y se dará cuenta de ello por escrito, en el menor tiempo posible al jefe inmediato, de lo contrario, las horas laboradas de manera suplementaria que no se autorizó o no se notificó no será reconocido.
+
+
+DÉCIMA. Modificación de las condiciones salariales: El trabajador acepta desde ahora expresamente todas las modificaciones de sus condiciones laborales determinadas por el empleador en ejercicio de su poder subordinante, tales como turnos y jornadas de trabajo, el lugar de prestación de servicio, el cargo u oficio y/o funciones y la forma de remuneración, siempre que tales modificaciones no afecten su honor, dignidad y derechos mínimos, ni impliquen desmejoras sustanciales o graves perjuicios para él, de conformidad con lo dispuesto por el art. 23 del C.S.T.
+
+
+DÉCIMA PRIMERA. Cláusula de confidencialidad, Propiedad Intelectual e Industrial: El trabajador se obliga a no divulgar, ni a entregar a personas ajenas al empleador, la información recibida, documentos, estudios, diseños, etc., que lleguen a su poder con ocasión del desarrollo del presente contrato. Por lo tanto, cualquier información societaria, técnica, financiera, comercial, estratégica, metodológica o cualquier otra relacionada con las actividades del empleador, bien sea que dicha información sea escrita, oral o visual, de la que tenga conocimiento o a la que tenga acceso por cualquier medio y en virtud del presente contrato, tendrá la calidad de reservada y confidencial, y por lo tanto no podrá ser utilizada ni revelada por el trabajador durante el término de duración del contrato y dos (2) años más. Si el trabajador llegara a violar la obligación de confidencialidad aquí pactada, pagará a el empleador, a título de pena, la suma equivalente a diez (10) salarios mínimos mensuales legales vigentes (S.M.M.L.V) suma ésta que será exigible ejecutivamente, sin necesidad de requerimiento alguno y con la sola demostración de la violación o incumplimiento imputados y la presentación de este contrato, el cual presta mérito ejecutivo.
+
+
+El EMPLEADOR tendrá derecho a hacer registrar o patentar a su nombre o a nombre de terceros, las invenciones, descubrimientos, los procedimientos, las mejoras en los procedimientos, los trabajos u obras y sus consiguientes resultados y en general los derechos de propiedad industrial e intelectual, que sean obtenidos por el TRABAJADOR en ejecución del contrato de trabajo, para lo cual éste último accederá a facilitar el conocimiento y consentimiento oportuno de las correspondientes formalidades y dar su firma y extender los poderes, contratos y documentos necesarios para tal fin, según y cuando lo solicite el EMPLEADOR, sin que éste quede obligado al pago de compensación alguna, diferente al salario y demás créditos laborales legales o acordados por las partes. El incumplimiento total o parcial de la presente cláusula genera la terminación del contrato de trabajo por justa causa, al igual que las acciones civiles y penales pertinentes, de conformidad con la ley 23 de 1982, ley 44 de 1993, Decisión 351 de 1993 de la CAN y el artículo 270 y siguientes de la ley 599 de 2000 (código penal).
+
+
+DÉCIMA SEGUNDA. Modificaciones: Cualquier modificación al presente contrato debe efectuarse por escrito y anexarse a este documento.
+
+
+DÉCIMA TERCERA. Información: Deja constancia el suscrito trabajador que ha recibido del empleador un detallado informe y capacitación sobre las funciones que va a desempeñar e instrucciones precisas sobre la forma en que han de cumplirse las mismas.
+
+
+DÉCIMA CUARTA. Autorizaciones: El TRABAJADOR autoriza al EMPLEADOR para deducirle de su salario mensual y/o de la liquidación definitiva de sus prestaciones sociales o acreencias laborales a la terminación del contrato de trabajo, las sumas de dinero que por concepto de préstamos, créditos, daños, elementos de trabajo extraviados puestos bajo su responsabilidad y cuidado, entre otros, le deba el primero al segundo o créditos a fondos de empleados, créditos por libranza a cooperativas, entidades financieras o Cajas de Compensación Familiar.
+
+
+DÉCIMA QUINTA. Liquidación de Salarios y Prestaciones: Para que el Empleador pueda realizar convenientemente las operaciones de liquidación, revisión y pago de salarios, prestaciones o indemnizaciones, el Trabajador otorga a aquella un plazo de quince (15) días contados a partir de la fecha de terminación del contrato para que le haga el pago de lo debido, sin que por ello incurra en mora o quede obligada a la indemnización moratoria.
+
+
+DÉCIMA SEXTA. Protección y Tratamiento de Datos Personales: En cumplimiento de lo dispuesto por la Ley 1581 de 2012 y sus Decretos Reglamentarios, el trabajador como titular de la información, declara que hace entrega de la misma al empleador de forma libre y voluntaria, bajo el conocimiento de que éste entrará a formar parte de la base de datos de éste y por tanto autoriza su tratamiento (recolección, almacenamiento, uso, circulación y supresión) para las finalidades establecidas en la Política de Tratamiento de Datos Personales de {{empresa_razon_social}} incluyendo campañas comerciales, promocionales y de servicio de los datos en las actividades exclusivas de {{empresa_razon_social}} y/o sus filiales de acuerdo con la legislación vigente. La política de Protección de Datos Personales podrá ser consultada en la empresa o en su página web. Por su parte en su calidad de empleador, se compromete a garantizar el cumplimiento de los principios señalados en la ley 1581 de 2012 y demás disposiciones reglamentarias, en particular en lo relacionado con la seguridad y la confidencialidad con la que se manejan los datos entregados y los derechos que se establecen para el titular de la información. El trabajador manifiesta que ha sido informado por parte del Empleador, del derecho que le asiste de acceder en cualquier momento a sus datos personales y a que estos sean rectificados, modificados o suprimidos y de la facultad que tiene de revocar su autorización para los efectos arriba descritos cuando quiera que no se respeten los principios, derechos y garantías legales y constitucionales. Así como también de formular quejas, reclamos y consultas frente al tratamiento que haga la compañía de sus datos personales, derechos que podrá ejercer por medio de comunicación escrita dirigida al siguiente correo electrónico: gestionhumanalamaria@gmail.com
+
+
+DÉCIMA SÉPTIMA. Efectos: El presente contrato reemplaza y deja sin efecto cualquier otro contrato escrito o verbal que se hubiera celebrado entre las partes con anterioridad.
+
+
+Para constancia se firma en dos ejemplares de un mismo tenor y valor legal, el día {{dia_firma}} del mes de {{mes_firma}} del año {{anio_firma}}.
+
+
+Uno de los ejemplares lo recibe el trabajador en el acto.
+
+
+
+
+___________________________________  
+EL EMPLEADOR
+PABLO JARAMILLO GUTIÉRREZ
+C.C. 75.088.150
+REPRESENTANTE LEGAL
+{{empresa_razon_social}}
+	
+
+__________________________________ EL TRABAJADOR
+{{nombres}} {{apellidos}}
+{{numero_documento}}
