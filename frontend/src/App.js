@@ -16,25 +16,24 @@ function App() {
     const [sociedades, setSociedades] = useState([]); // Almacena las empresas de PostgreSQL
     const [sedesDisponibles, setSedesDisponibles] = useState([]); // Almacena las sedes filtradas
 
-    // Campos del Formulario Unificado (Datos IA + Datos Manuales)
     const [formulario, setFormulario] = useState({
+        // 📌 Campos Base Globales (Se repiten siempre)
         nombres: '',
         apellidos: '',
         tipo_documento: '',
         numero_documento: '',
-        fecha_nacimiento: '',
-        lugar_expedicion: '',
-        fecha_expedicion: '',
-        direccion_residencia: '',
-        telefono: '',
+        cargo: '',
+        salario: '', // Sueldo base o valor de honorarios
+        fecha_ingreso: new Date().toISOString().split('T')[0],
         empresa_id: '',
         sede_id: '',
+
+        // 🔀 Campos Condicionales (Excepciones de minutas)
+        fecha_finalizacion: '',      // Exclusivo de FIJO
+        duracion_periodo_prueba: '', // Exclusivo de FIJO
+        funciones_especificas: '',   // Exclusivo de TIEMPO_PARCIAL y PRESTACIONES
         aplica_sede: true,
-        sede_manual: '',
-        tipo_contrato: 'INDEFINIDO_ESTANDAR',
-        cargo: '',
-        salario: '',
-        fecha_ingreso: ''
+        sede_manual: ''
     });
 
     const empleadosPorPagina = 5;
@@ -335,8 +334,16 @@ function App() {
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Dirección de Residencia:</label>
                             <input type="text" value={formulario.direccion_residencia} onChange={e => setFormulario({ ...formulario, direccion_residencia: e.target.value })} placeholder="Ej: Avenida 15 # 103-24" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
 
-                            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Teléfono Celular:</label>
-                            <input type="text" value={formulario.telefono} onChange={e => setFormulario({ ...formulario, telefono: e.target.value })} placeholder="Ej: 3124567890" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Teléfono Celular:</label>
+                                    <input type="text" value={formulario.telefono} onChange={e => setFormulario({ ...formulario, telefono: e.target.value })} placeholder="Ej: 3124567890" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Fecha de Nacimiento:</label>
+                                    <input type="date" value={formulario.fecha_nacimiento} onChange={e => setFormulario({ ...formulario, fecha_nacimiento: e.target.value })} required style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                                </div>
+                            </div>
 
                             <h4 style={{ color: '#4a5568', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #edf2f7', paddingBottom: '5px' }}>2. Cláusulas y Datos de Contratación (Manual)</h4>
 
@@ -347,7 +354,7 @@ function App() {
                                 onChange={e => {
                                     const id = e.target.value;
                                     setFormulario({ ...formulario, empresa_id: id });
-                                    cargarSedesDeEmpresa(id); // Trae las sedes correctas al cambiar el combo
+                                    cargarSedesDeEmpresa(id);
                                 }}
                                 style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0', backgroundColor: '#fff' }}
                             >
@@ -415,6 +422,46 @@ function App() {
                                 <option value="PRESTACION_DESCUENTO">Prestación de Servicios (Con Descuento)</option>
                                 <option value="PRESTACION_AUTONOMO">Prestación de Servicios (Autónomo)</option>
                             </select>
+
+                            {/* ========================================================================= */}
+                            {/* 🔀 INYECCIÓN DE SECCIONES EXCEPCIONALES DINÁMICAS                        */}
+                            {/* ========================================================================= */}
+
+                            {/* Excepción para Contratos Fijos (Pide Fecha de Finalización y Periodo de Prueba) */}
+                            {formulario.tipo_contrato === "FIJO" && (
+                                <div style={{ backgroundColor: '#f7fafc', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #cbd5e0' }}>
+                                    <h4 style={{ margin: '0 0 10px 0', color: '#2b6cb0', fontSize: '13px' }}>📋 Cláusulas Especiales: Término Fijo</h4>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#4a5568' }}>Fecha de Finalización:</label>
+                                            <input type="date" value={formulario.fecha_finalizacion || ''} onChange={e => setFormulario({ ...formulario, fecha_finalizacion: e.target.value })} required style={{ width: '100%', padding: '6px', marginTop: '4px', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#4a5568' }}>Duración Periodo Prueba:</label>
+                                            <input type="text" placeholder="Ej: 15 DÍAS" value={formulario.duracion_periodo_prueba || ''} onChange={e => setFormulario({ ...formulario, duracion_periodo_prueba: e.target.value })} style={{ width: '100%', padding: '6px', marginTop: '4px', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Excepción para Tiempo Parcial y Prestaciones (Pide Objeto Contractual o Listado de Funciones) */}
+                            {(formulario.tipo_contrato === "TIEMPO_PARCIAL" || formulario.tipo_contrato.startsWith("PRESTACION")) && (
+                                <div style={{ backgroundColor: '#f7fafc', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #cbd5e0' }}>
+                                    <h4 style={{ margin: '0 0 10px 0', color: '#2b6cb0', fontSize: '13px' }}>
+                                        {formulario.tipo_contrato.startsWith("PRESTACION") ? "💼 Objeto Contractual / Obligaciones" : "📋 Cláusula Segunda: Funciones Específicas"}
+                                    </h4>
+                                    <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#4a5568' }}>Detalle descriptivo de actividades:</label>
+                                    <textarea
+                                        value={formulario.funciones_especificas || ''}
+                                        onChange={e => setFormulario({ ...formulario, funciones_especificas: e.target.value })}
+                                        placeholder={formulario.tipo_contrato.startsWith("PRESTACION") ? "Describa el objeto y entregables del contratista..." : "Liste las tareas asignadas para el cargo parcial..."}
+                                        style={{ width: '100%', padding: '8px', marginTop: '6px', borderRadius: '4px', border: '1px solid #cbd5e0', minHeight: '65px', resize: 'vertical', fontFamily: 'inherit' }}
+                                        required
+                                    />
+                                </div>
+                            )}
+
+                            {/* ========================================================================= */}
 
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a5568' }}>Cargo Estipulado:</label>
                             <input type="text" value={formulario.cargo} onChange={e => setFormulario({ ...formulario, cargo: e.target.value })} required placeholder="Ej: Ingeniero de Datos Senior" style={{ width: '100%', padding: '8px', margin: '6px 0 12px 0', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
