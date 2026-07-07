@@ -139,6 +139,7 @@ function App() {
             numero_documento: emp.numero_documento || '',
             fecha_nacimiento: emp.fecha_nacimiento || '',
             lugar_expedicion: emp.lugar_expedicion || '',
+            fecha_expedicion: emp.fecha_expedicion || '',
             direccion_residencia: emp.direccion_residencia || '',
             telefono: emp.telefono || '',
 
